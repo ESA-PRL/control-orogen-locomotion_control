@@ -1,0 +1,337 @@
+/* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
+
+#include "Task.hpp"
+
+using namespace locomotion_control;
+
+Task::Task(std::string const& name, TaskCore::TaskState initial_state)
+    : TaskBase(name, initial_state)
+{
+	state=NO_COMMAND;
+}
+
+Task::Task(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state)
+    : TaskBase(name, engine, initial_state)
+{
+	state=NO_COMMAND;
+}
+
+Task::~Task()
+{
+}
+
+/// The following lines are template definitions for the various state machine
+// hooks defined by Orocos::RTT. See Task.hpp for more detailed
+// documentation about them.
+
+bool Task::configureHook()
+{
+    if (! TaskBase::configureHook())
+        return false;
+
+    /** Read configuration **/
+    window=_target_window.value();
+    position_limit=_position_limit.value();
+    velocity_limit=_velocity_limit.value();
+    canNodesNames = _canNodesNames.value();
+
+    /** Initialize the locomotion control library **/
+    locCtrl.setRoverParams(_rover_parameters);
+    locCtrl.commands.resize(canNodesNames.size());
+    for (size_t i=0;i<locCtrl.commands.size();i++)
+    {
+    	locCtrl.commands[i].mode=UNSET_COMMAND;
+    }
+
+    /** Initialize the joints variables **/
+    joints_readings.resize(_number_motors.value());
+    joints_commands.resize(canNodesNames.size());
+    joints_commands.names = canNodesNames;
+
+    /** Initial motion commad is NaN **/
+    motion_command.translation = base::NaN<double>();
+    motion_command.rotation = base::NaN<double>();
+    state=NO_COMMAND;
+    mode=STOPPED_WHEELS;
+
+    return true;
+
+}
+
+bool Task::startHook()
+{
+    if (! TaskBase::startHook())
+        return false;
+    return true;
+}
+
+void Task::updateHook()
+{
+    TaskBase::updateHook();
+    base::MotionCommand2D current_motion_command;
+
+    /** Read the high level command and send information to the joints **/
+    if ( (_motion_command.read(current_motion_command) == RTT::NewData) )
+    {
+
+        if ((current_motion_command.rotation != motion_command.rotation) ||
+            (current_motion_command.translation != motion_command.translation))
+        {
+            std::cout<<"locomotion_control::Task::motion_commandCallback: new command received..."<<std::endl;
+	    state=NEW_COMMAND;
+            /** Take the new motion command **/
+            motion_command = current_motion_command;
+	}
+    }
+
+    if (state==NEW_COMMAND)
+    {
+        if (motion_command.rotation==0 && motion_command.translation==0) 	//! stop command
+        {
+            std::cout<<"locomotion_control::Task:: stopped rover"<<std::endl;
+            locCtrl.setDrivingMode(STOPPED_WHEELS);
+            sendCommands();
+	    mode=STOPPED_WHEELS;
+	    state=NO_COMMAND;
+        }
+        else
+        {
+            if (motion_command.rotation==0)						//! straight line command
+            {
+		if (mode!=STRAIGHT_LINE)
+		{
+                    locCtrl.setDrivingMode(STRAIGHT_LINE);
+                    std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
+                    sendCommands();
+		    mode=STRAIGHT_LINE;
+		}
+	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);
+            }
+            else if (motion_command.translation==0) 					//! point turn command
+            {
+                if (mode!=SPOT_TURN)
+		{
+		    locCtrl.setDrivingMode(SPOT_TURN);
+                    std::cout<<"locomotion_control::Task:: entered spot turn mode" <<std::endl;
+                    sendCommands();
+		    mode=SPOT_TURN;
+		}
+                locCtrl.pltfDriveSpotTurn(motion_command.rotation);
+                sendSteeringCommands();
+            }
+            else									//! ackerman command
+            {
+                if (mode!=ACKERMAN)
+		{
+		    locCtrl.setDrivingMode(ACKERMAN);
+                    std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                    sendCommands();
+		    mode=ACKERMAN;
+		}
+                double vel=motion_command.translation;
+                //! Point to Control set to be always the centre of the rover
+		double PtC[]={0,0}; 
+		//!Instantaneous center of rotation
+                double CoR[]={0,motion_command.translation/motion_command.rotation};
+                locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
+                sendSteeringCommands();
+            }
+    	    state=PREP_COMMAND;
+	}
+    }
+    
+    if (state==PREP_COMMAND)
+    {
+        if (_joints_readings.read(joints_readings) == RTT::NewData)
+        {
+            //std::cout<<"locomotion_control::Task::joint_readingsCallback : new status received..."<<std::endl;
+            if(targetReached())
+	    {
+                std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
+		state=EXEC_COMMAND;
+	    }
+	}
+    }
+    
+    if(state==EXEC_COMMAND)
+    {
+	sendCommands();
+        std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
+	state=NO_COMMAND;       	
+    }
+}
+
+void Task::sendCommands()
+{
+	for (size_t i=0;i<locCtrl.commands.size();i++)
+	{
+		switch (locCtrl.commands[i].mode)
+		{
+		case UNSET_COMMAND:
+                        if (joints_commands[i].hasPosition())
+                            joints_commands[i].position = base::unset<double>();
+                        if (joints_commands[i].hasSpeed())
+                            joints_commands[i].speed = base::unset<float>();
+                        if (joints_commands[i].hasEffort())
+                            joints_commands[i].effort = base::unset<float>();
+
+			break;
+		case MODE_POSITION:
+			if (locCtrl.commands[i].pos>position_limit)
+                        {
+                                joints_commands[i].position = position_limit;
+                        }
+			else if (locCtrl.commands[i].pos<-position_limit)
+                        {
+                                joints_commands[i].position = -position_limit;
+                        }
+			else
+                        {
+                                joints_commands[i].position = locCtrl.commands[i].pos;
+                        }
+			locCtrl.commands[i].mode=UNSET_COMMAND;
+			break;
+		case MODE_SPEED:
+			if (locCtrl.commands[i].vel>velocity_limit)
+                        {
+                                joints_commands[i].speed = velocity_limit;
+                        }
+			else if (locCtrl.commands[i].vel<-velocity_limit)
+                        {
+                                joints_commands[i].speed = -velocity_limit;
+                        }
+			else
+                        {
+                            joints_commands[i].speed = locCtrl.commands[i].vel;
+                        }
+			locCtrl.commands[i].mode=UNSET_COMMAND;
+			break;
+                default:
+                        break;
+		}
+	}
+        joints_commands.time = base::Time::now();
+	_joints_commands.write(joints_commands);
+}
+
+void Task::sendSteeringCommands()
+{
+	/*
+	for (size_t i=0;i<locCtrl.commands.size();i++)
+	{
+        	if (joints_commands[i].hasPosition())
+                	joints_commands[i].position = base::unset<double>();
+                if (joints_commands[i].hasSpeed())
+                        joints_commands[i].speed = base::unset<float>();
+                if (joints_commands[i].hasEffort())
+                        joints_commands[i].effort = base::unset<float>();
+	}
+	*/
+
+	if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos>position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_FL].position=position_limit;
+        }
+	else if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos<-position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_FL].position=-position_limit;
+        }
+	else
+        {
+		joints_commands[COMMAND_WHEEL_STEER_FL].position=locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos;
+        }
+	locCtrl.commands[COMMAND_WHEEL_STEER_FL].mode=UNSET_COMMAND;
+
+	if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos>position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_FR].position=position_limit;
+        }
+	else if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos<-position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_FR].position=-position_limit;
+        }
+	else
+        {
+		joints_commands[COMMAND_WHEEL_STEER_FR].position=locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos;
+        }
+	locCtrl.commands[COMMAND_WHEEL_STEER_FR].mode=UNSET_COMMAND;
+
+	if (locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos>position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_BL].position=position_limit;
+        }
+	else if (locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos<-position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_BL].position=-position_limit;
+        }
+	else
+        {
+		joints_commands[COMMAND_WHEEL_STEER_BL].position=locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos;
+        }
+	locCtrl.commands[COMMAND_WHEEL_STEER_BL].mode=UNSET_COMMAND;
+
+	if (locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos>position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_BR].position=position_limit;
+        }
+	else if (locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos<-position_limit)
+        {
+		joints_commands[COMMAND_WHEEL_STEER_BR].position=-position_limit;
+        }
+	else
+        {
+		joints_commands[COMMAND_WHEEL_STEER_BR].position=locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos;
+        }
+	locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
+
+        joints_commands.time = base::Time::now();
+	_joints_commands.write(joints_commands);
+}
+
+bool Task::targetReached()
+{
+	for (unsigned int i=0;i<joints_readings.size();i++)
+	{
+            switch (joints_commands[i].getMode())
+            {
+            case base::JointState::UNSET:
+                    //! Means no command was send for this motor. Don't need to check target.
+                    break;
+            case base::JointState::POSITION:
+                    if (((joints_readings[i].position-joints_commands[i].position)>window) || ((joints_commands[i].position-joints_readings[i].position)>window))
+                    {
+                            //std::cout<<"locomotion_control::Task::targetReached : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position <<std::endl;
+                            return false;
+                    }
+                    break;
+            case base::JointState::SPEED:
+                    if (((joints_readings[i].speed-joints_commands[i].speed)>window) || ((joints_commands[i].speed-joints_readings[i].speed)>window))
+                    {
+                            //std::cout<<"locomotion_control::Task::targetReached : Target velocity is: "<< joints_commands[i].speed << " and current velocity is: " << joints_readings[i].speed <<std::endl;
+                            return false;
+                    }
+                    break;
+            case base::JointState::RAW:
+                    //! Not implemented
+                    break;
+            default:
+                    break;
+            }
+	}
+	//std::cout << "target reached!" << std::endl;
+	return true;
+}
+
+void Task::errorHook()
+{
+    TaskBase::errorHook();
+}
+void Task::stopHook()
+{
+    TaskBase::stopHook();
+}
+void Task::cleanupHook()
+{
+    TaskBase::cleanupHook();
+}
+
