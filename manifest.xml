@@ -13,6 +13,6 @@
   <depend package="dummy-dependency-n-1" />
   <depend package="dummy-dependency-n" />
   -->
-  <depend package="exoter/locomotion_control" />
+  <depend package="control/locomotion_control" />
   <depend package="base/orogen/types" />
 </package>
