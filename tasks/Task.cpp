@@ -210,7 +210,17 @@ void Task::sendCommands()
                         break;
 		}
 	}
-        joints_commands.time = base::Time::now();
+ 
+	///  QUICK FIX TO COMMAND WHEEL WALKING MOTORS TO FIXED POSITION ///
+//	joints_commands[COMMAND_WHEEL_WALK_FL].position=-0.68; // 20 deg in rad
+//	joints_commands[COMMAND_WHEEL_WALK_FR].position=-0.68;
+//	joints_commands[COMMAND_WHEEL_WALK_CL].position=-0.35;
+//	joints_commands[COMMAND_WHEEL_WALK_CR].position=-0.35;
+//	joints_commands[COMMAND_WHEEL_WALK_BL].position=-0.35;
+//	joints_commands[COMMAND_WHEEL_WALK_BR].position=-0.35;
+	////////               END OF QUICK FIX                    /////////
+
+       joints_commands.time = base::Time::now();
 	_joints_commands.write(joints_commands);
 }
 
