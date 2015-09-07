@@ -97,8 +97,9 @@ void Task::updateHook()
         else
         {
             if (motion_command.rotation==0)						//! straight line command
+// E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
             {
-		if (mode!=STRAIGHT_LINE)
+/*		if (mode!=STRAIGHT_LINE)
 		{
                     locCtrl.setDrivingMode(STRAIGHT_LINE);
                     std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
@@ -106,6 +107,22 @@ void Task::updateHook()
 		    mode=STRAIGHT_LINE;
 		}
 	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);
+*/
+                if (mode!=ACKERMAN)
+		{
+		    locCtrl.setDrivingMode(ACKERMAN);
+                    std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                    sendCommands();
+		    mode=ACKERMAN;
+		}
+		motion_command.rotation=motion_command.rotation+0.00000001;
+                double vel=motion_command.translation;
+                //! Point to Control set to be always the centre of the rover
+		double PtC[]={0,0}; 
+		//!Instantaneous center of rotation
+                double CoR[]={0,motion_command.translation/motion_command.rotation};
+                locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
+                sendSteeringCommands();
             }
             else if (motion_command.translation==0) 					//! point turn command
             {
