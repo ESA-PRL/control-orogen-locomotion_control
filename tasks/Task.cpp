@@ -47,6 +47,7 @@ bool Task::configureHook()
     joints_readings.resize(_number_motors.value());
     joints_commands.resize(canNodesNames.size());
     joints_commands.names = canNodesNames;
+    bema_joints.resize(6);
 
     /** Initial motion commad is NaN **/
     motion_command.translation = base::NaN<double>();
@@ -69,6 +70,33 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
     base::MotionCommand2D current_motion_command;
+
+    if (_bema_command.read(bema_command) == RTT::NewData)
+    {
+        if (mode==STOPPED_WHEELS)
+        {
+            locCtrl.pltfBemaDeploy(bema_command);
+            sendCommands();
+            state=PREP_COMMAND;
+        }
+        else
+        {
+            std::cout<<"LocomotionControl WARNING: Bema command cannot be sent while rover is in motion!"<<std::endl;
+        }
+    }
+    if (_walking_command.read(bema_command) == RTT::NewData)
+    {
+        if (mode==STOPPED_WHEELS)
+        {
+            locCtrl.pltfWalkingDeploy(bema_command);
+            sendCommands();
+            state=PREP_COMMAND;
+        }
+        else
+        {
+            std::cout<<"LocomotionControl WARNING: Bema walking command cannot be sent while rover is in motion!"<<std::endl;
+        }
+    }
 
     /** Read the high level command and send information to the joints **/
     if ( (_motion_command.read(current_motion_command) == RTT::NewData) )
@@ -99,7 +127,7 @@ void Task::updateHook()
             if (motion_command.rotation==0)						//! straight line command
 // E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
             {
-/*		if (mode!=STRAIGHT_LINE)
+		if (mode!=STRAIGHT_LINE)
 		{
                     locCtrl.setDrivingMode(STRAIGHT_LINE);
                     std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
@@ -107,7 +135,8 @@ void Task::updateHook()
 		    mode=STRAIGHT_LINE;
 		}
 	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);
-*/
+// M.A: Enabled staight line command for egrees testing
+/*
                 if (mode!=ACKERMAN)
 		{
 		    locCtrl.setDrivingMode(ACKERMAN);
@@ -123,6 +152,7 @@ void Task::updateHook()
                 double CoR[]={0,motion_command.translation/motion_command.rotation};
                 locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
                 sendSteeringCommands();
+*/
             }
             else if (motion_command.translation==0) 					//! point turn command
             {
@@ -162,6 +192,7 @@ void Task::updateHook()
         if (_joints_readings.read(joints_readings) == RTT::NewData)
         {
             //std::cout<<"locomotion_control::Task::joint_readingsCallback : new status received..."<<std::endl;
+            sendBemaJoints();
             if(targetReached())
 	    {
                 std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
@@ -174,7 +205,7 @@ void Task::updateHook()
     {
 	sendCommands();
         std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
-	state=NO_COMMAND;       	
+	state=NO_COMMAND;	
     }
 }
 
@@ -210,7 +241,7 @@ void Task::sendCommands()
 			break;
 		case MODE_SPEED:
 			if (locCtrl.commands[i].vel>velocity_limit)
-                        {
+                        { 
                                 joints_commands[i].speed = velocity_limit;
                         }
 			else if (locCtrl.commands[i].vel<-velocity_limit)
@@ -314,6 +345,16 @@ void Task::sendSteeringCommands()
         joints_commands.time = base::Time::now();
 	_joints_commands.write(joints_commands);
 }
+
+void Task::sendBemaJoints()
+{
+    for (int i=0;i<6;i++)
+    {
+        bema_joints[i].position=joints_readings[10+i].position;
+    }
+    _bema_joints.write(bema_joints);
+}
+
 
 bool Task::targetReached()
 {

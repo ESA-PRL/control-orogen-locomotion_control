@@ -52,12 +52,15 @@ namespace locomotion_control {
         /** Input Variables **/
         /*********************/
     	base::MotionCommand2D motion_command;
+        double bema_command;
+        double walking_command;
         base::samples::Joints joints_readings;
 
         /**********************/
         /** Output Variables **/
         /**********************/
         base::commands::Joints joints_commands;
+        base::samples::Joints bema_joints;
 
     public:
         /** TaskContext constructor for Task
@@ -79,6 +82,7 @@ namespace locomotion_control {
 
         void sendCommands();
         void sendSteeringCommands();
+        void sendBemaJoints();
         bool targetReached();
 
         /** This hook is called by Orocos when the state machine transitions
