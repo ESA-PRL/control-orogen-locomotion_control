@@ -70,13 +70,15 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
     base::MotionCommand2D current_motion_command;
-
+    if (_joints_readings.read(joints_readings) == RTT::NewData)
+        sendBemaJoints();
     if (_bema_command.read(bema_command) == RTT::NewData)
     {
         if (mode==STOPPED_WHEELS)
         {
             locCtrl.pltfBemaDeploy(bema_command);
             sendCommands();
+            std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
             state=PREP_COMMAND;
         }
         else
@@ -90,6 +92,7 @@ void Task::updateHook()
         {
             locCtrl.pltfWalkingDeploy(bema_command);
             sendCommands();
+            std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
             state=PREP_COMMAND;
         }
         else
@@ -189,16 +192,16 @@ void Task::updateHook()
     
     if (state==PREP_COMMAND)
     {
-        if (_joints_readings.read(joints_readings) == RTT::NewData)
-        {
+        //if (_joints_readings.read(joints_readings) == RTT::NewData)
+        //{
             //std::cout<<"locomotion_control::Task::joint_readingsCallback : new status received..."<<std::endl;
-            sendBemaJoints();
+            //sendBemaJoints();
             if(targetReached())
 	    {
                 std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
 		state=EXEC_COMMAND;
 	    }
-	}
+	//}
     }
     
     if(state==EXEC_COMMAND)
@@ -293,6 +296,7 @@ void Task::sendSteeringCommands()
 	else if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos<-position_limit)
         {
 		joints_commands[COMMAND_WHEEL_STEER_FL].position=-position_limit;
+	std::cout<<"DEBUG!"<<std::endl;
         }
 	else
         {
@@ -368,7 +372,7 @@ bool Task::targetReached()
             case base::JointState::POSITION:
                     if (((joints_readings[i].position-joints_commands[i].position)>window) || ((joints_commands[i].position-joints_readings[i].position)>window))
                     {
-                            //std::cout<<"locomotion_control::Task::targetReached : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position <<std::endl;
+                            //std::cout<<"locomotion_control::Task::targetReached " << i << " : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position <<std::endl;
                             return false;
                     }
                     break;
