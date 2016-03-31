@@ -5,7 +5,6 @@
 
 #include "locomotion_control/TaskBase.hpp"
 #include "locomotion_control/LocomotionControl.h"
-#include "platform_driver/platform_driverTypes.hpp"
 
 #include <base/samples/Joints.hpp>
 #include <base/commands/Joints.hpp>
