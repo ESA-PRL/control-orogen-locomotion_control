@@ -74,31 +74,27 @@ void Task::updateHook()
         sendBemaJoints();
     if (_bema_command.read(bema_command) == RTT::NewData)
     {
-        if (mode==STOPPED_WHEELS)
+        if (mode!=WHEEL_WALKING)
         {
-            locCtrl.pltfBemaDeploy(bema_command);
+	    locCtrl.setDrivingMode(WHEEL_WALKING);
+            std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
-            std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
-            state=PREP_COMMAND;
+	    mode=WHEEL_WALKING;
         }
-        else
-        {
-            std::cout<<"LocomotionControl WARNING: Bema command cannot be sent while rover is in motion!"<<std::endl;
-        }
+        locCtrl.pltfBemaDeploy(bema_command);
+        state=PREP_COMMAND;
     }
     if (_walking_command.read(bema_command) == RTT::NewData)
     {
-        if (mode==STOPPED_WHEELS)
+        if (mode!=WHEEL_WALKING)
         {
-            locCtrl.pltfWalkingDeploy(bema_command);
+	    locCtrl.setDrivingMode(WHEEL_WALKING);
+            std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
-            std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
-            state=PREP_COMMAND;
+	    mode=WHEEL_WALKING;
         }
-        else
-        {
-            std::cout<<"LocomotionControl WARNING: Bema walking command cannot be sent while rover is in motion!"<<std::endl;
-        }
+        locCtrl.pltfWalkingDeploy(bema_command);
+        state=PREP_COMMAND;
     }
 
     /** Read the high level command and send information to the joints **/
@@ -121,6 +117,7 @@ void Task::updateHook()
         {
             std::cout<<"locomotion_control::Task:: stopped rover"<<std::endl;
             locCtrl.setDrivingMode(STOPPED_WHEELS);
+	//}
             sendCommands();
 	    mode=STOPPED_WHEELS;
 	    state=NO_COMMAND;
@@ -193,16 +190,11 @@ void Task::updateHook()
     
     if (state==PREP_COMMAND)
     {
-        //if (_joints_readings.read(joints_readings) == RTT::NewData)
-        //{
-            //std::cout<<"locomotion_control::Task::joint_readingsCallback : new status received..."<<std::endl;
-            //sendBemaJoints();
-            if(targetReached())
-	    {
-                std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
-		state=EXEC_COMMAND;
-	    }
-	//}
+        if(targetReached())
+	{
+            std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
+	    state=EXEC_COMMAND;
+	}
     }
     
     if(state==EXEC_COMMAND)
