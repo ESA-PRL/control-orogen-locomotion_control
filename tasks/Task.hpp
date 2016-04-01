@@ -10,6 +10,9 @@
 #include <base/commands/Joints.hpp>
 #include <base/commands/Motion2D.hpp>
 
+/** STD **/
+#include <vector>
+
 namespace locomotion_control {
 
     /*! \class Task 
