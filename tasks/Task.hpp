@@ -5,7 +5,13 @@
 
 #include "locomotion_control/TaskBase.hpp"
 #include "locomotion_control/LocomotionControl.h"
-#include "platform_driver/platform_driverTypes.hpp"
+
+#include <base/samples/Joints.hpp>
+#include <base/commands/Joints.hpp>
+#include <base/commands/Motion2D.hpp>
+
+/** STD **/
+#include <vector>
 
 namespace locomotion_control {
 
@@ -51,7 +57,7 @@ namespace locomotion_control {
         /*********************/
         /** Input Variables **/
         /*********************/
-    	base::MotionCommand2D motion_command;
+    	base::commands::Motion2D motion_command;
         double bema_command;
         double walking_command;
         base::samples::Joints joints_readings;
