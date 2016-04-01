@@ -69,7 +69,7 @@ bool Task::startHook()
 void Task::updateHook()
 {
     TaskBase::updateHook();
-    base::MotionCommand2D current_motion_command;
+    base::commands::Motion2D current_motion_command;
     if (_joints_readings.read(joints_readings) == RTT::NewData)
         sendBemaJoints();
     if (_bema_command.read(bema_command) == RTT::NewData)
