@@ -82,6 +82,8 @@ void Task::updateHook()
 	    mode=WHEEL_WALKING;
         }
         locCtrl.pltfBemaDeploy(bema_command);
+        motion_command.translation = base::NaN<double>();
+        motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
     }
     if (_walking_command.read(bema_command) == RTT::NewData)
@@ -94,6 +96,8 @@ void Task::updateHook()
 	    mode=WHEEL_WALKING;
         }
         locCtrl.pltfWalkingDeploy(bema_command);
+        motion_command.translation = base::NaN<double>();
+        motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
     }
 
