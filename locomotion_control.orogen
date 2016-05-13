@@ -37,7 +37,7 @@ task_context "Task" do
    # Data can be retrieved using _input.read(value), which returns true if data
    # was available, and false otherwise. _input.connected() returns if this
    # input is connected to an output or not.
-   input_port "motion_command", "base/MotionCommand2D"
+   input_port "motion_command", "base/commands/Motion2D"
    input_port "bema_command", "double"
    input_port "walking_command_front", "double"
    input_port "walking_command_rear", "double"
