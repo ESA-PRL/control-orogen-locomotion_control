@@ -39,7 +39,8 @@ task_context "Task" do
    # input is connected to an output or not.
    input_port "motion_command", "base/MotionCommand2D"
    input_port "bema_command", "double"
-   input_port "walking_command", "double"
+   input_port "walking_command_front", "double"
+   input_port "walking_command_rear", "double"
    input_port "joints_readings", "base/samples/Joints"
 
    # An output port, i.e. an object to which the component pushes data so that

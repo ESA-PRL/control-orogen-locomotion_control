@@ -86,7 +86,7 @@ void Task::updateHook()
         motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
     }
-    if (_walking_command.read(bema_command) == RTT::NewData)
+    if (_walking_command_front.read(bema_command) == RTT::NewData)
     {
         if (mode!=WHEEL_WALKING)
         {
@@ -95,7 +95,21 @@ void Task::updateHook()
             sendCommands();
 	    mode=WHEEL_WALKING;
         }
-        locCtrl.pltfWalkingDeploy(bema_command);
+        locCtrl.pltfWalkingDeployFront(bema_command);
+        motion_command.translation = base::NaN<double>();
+        motion_command.rotation = base::NaN<double>();
+        state=PREP_COMMAND;
+    }
+    if (_walking_command_rear.read(bema_command) == RTT::NewData)
+    {
+        if (mode!=WHEEL_WALKING)
+        {
+	    locCtrl.setDrivingMode(WHEEL_WALKING);
+            std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
+            sendCommands();
+	    mode=WHEEL_WALKING;
+        }
+        locCtrl.pltfWalkingDeployRear(bema_command);
         motion_command.translation = base::NaN<double>();
         motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
@@ -131,7 +145,7 @@ void Task::updateHook()
             if (motion_command.rotation==0)						//! straight line command
 // E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
             {
-/*             	if (mode!=STRAIGHT_LINE)
+             	if (mode!=STRAIGHT_LINE)
 		{
                     locCtrl.setDrivingMode(STRAIGHT_LINE);
                     std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
@@ -139,9 +153,9 @@ void Task::updateHook()
 		    mode=STRAIGHT_LINE;
 		}
 	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);
-*/
-// M.A: Enabled staight line command for egrees testing
 
+// M.A: Enabled staight line command for egrees testing
+/*
                 if (mode!=ACKERMAN)
 		{
 		    locCtrl.setDrivingMode(ACKERMAN);
@@ -157,7 +171,7 @@ void Task::updateHook()
                 double CoR[]={0,motion_command.translation/motion_command.rotation};
                 locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
                 sendSteeringCommands();
-
+*/
             }
             else if (motion_command.translation==0) 					//! point turn command
             {
