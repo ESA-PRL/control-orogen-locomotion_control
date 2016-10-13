@@ -2,6 +2,10 @@
 
 #include "Task.hpp"
 
+#define BEMA 0
+#define FRONT 1
+#define REAR 2
+
 using namespace locomotion_control;
 
 Task::Task(std::string const& name, TaskCore::TaskState initial_state)
@@ -80,8 +84,9 @@ void Task::updateHook()
             std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
 	    mode=WHEEL_WALKING;
+            deploy_mode=BEMA;
         }
-        locCtrl.pltfBemaDeploy(bema_command);
+        locCtrl.pltfBemaDeploy(bema_command, currentDeployAngles);
         motion_command.translation = base::NaN<double>();
         motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
@@ -94,8 +99,9 @@ void Task::updateHook()
             std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
 	    mode=WHEEL_WALKING;
+            deploy_mode=FRONT;
         }
-        locCtrl.pltfWalkingDeployFront(bema_command);
+        locCtrl.pltfWalkingDeployFront(bema_command, currentDeployAngles);
         motion_command.translation = base::NaN<double>();
         motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
@@ -108,8 +114,9 @@ void Task::updateHook()
             std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
 	    mode=WHEEL_WALKING;
+            deploy_mode=REAR;
         }
-        locCtrl.pltfWalkingDeployRear(bema_command);
+        locCtrl.pltfWalkingDeployRear(bema_command, currentDeployAngles);
         motion_command.translation = base::NaN<double>();
         motion_command.rotation = base::NaN<double>();
         state=PREP_COMMAND;
@@ -217,9 +224,28 @@ void Task::updateHook()
     
     if(state==EXEC_COMMAND)
     {
-	sendCommands();
-        std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
-	state=NO_COMMAND;	
+        if (mode!=WHEEL_WALKING)
+        {
+            sendCommands();
+            std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
+	    state=NO_COMMAND;	
+        }
+        else 
+        {
+            if (deploy_mode==BEMA)
+            {
+                locCtrl.pltfBemaDeploy(bema_command, currentDeployAngles);
+            }
+            else if (deploy_mode==FRONT)
+            {
+                locCtrl.pltfWalkingDeployFront(bema_command, currentDeployAngles);
+            }
+            else if (deploy_mode==REAR)
+            {
+                locCtrl.pltfWalkingDeployRear(bema_command, currentDeployAngles);
+            }
+            sendCommands();
+        }
     }
 }
 
@@ -307,7 +333,6 @@ void Task::sendSteeringCommands()
 	else if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos<-position_limit)
         {
 		joints_commands[COMMAND_WHEEL_STEER_FL].position=-position_limit;
-	std::cout<<"DEBUG!"<<std::endl;
         }
 	else
         {
@@ -366,6 +391,7 @@ void Task::sendBemaJoints()
     for (int i=0;i<6;i++)
     {
         bema_joints[i].position=joints_readings[10+i].position;
+        currentDeployAngles[i]=joints_readings[10+i].position;
     }
     _bema_joints.write(bema_joints);
 }
@@ -390,7 +416,7 @@ bool Task::targetReached()
             case base::JointState::SPEED:
                     if (((joints_readings[i].speed-joints_commands[i].speed)>window) || ((joints_commands[i].speed-joints_readings[i].speed)>window))
                     {
-                            //std::cout<<"locomotion_control::Task::targetReached : Target velocity is: "<< joints_commands[i].speed << " and current velocity is: " << joints_readings[i].speed <<std::endl;
+                            //std::cout<<"locomotion_control::Task::targetReached " << i << " : Target velocity is: "<< joints_commands[i].speed << " and current velocity is: " << joints_readings[i].speed <<std::endl;
                             return false;
                     }
                     break;

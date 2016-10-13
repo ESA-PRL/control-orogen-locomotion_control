@@ -53,6 +53,8 @@ namespace locomotion_control {
     	LocomotionControl locCtrl;
 	CommandingState state;
 	PltfDrivingMode mode;
+        double currentDeployAngles[6];
+        int deploy_mode;
 
         /*********************/
         /** Input Variables **/
