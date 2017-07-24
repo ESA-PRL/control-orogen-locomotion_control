@@ -129,7 +129,7 @@ void Task::updateHook()
         if ((current_motion_command.rotation != motion_command.rotation) ||
             (current_motion_command.translation != motion_command.translation))
         {
-            std::cout<<"locomotion_control::Task::motion_commandCallback: new command received..."<<std::endl;
+            //std::cout<<"locomotion_control::Task::motion_commandCallback: new command received..."<<std::endl;
 	    state=NEW_COMMAND;
             /** Take the new motion command **/
             motion_command = current_motion_command;
@@ -152,17 +152,17 @@ void Task::updateHook()
             if (motion_command.rotation==0)						//! straight line command
 // E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
             {
-             	if (mode!=STRAIGHT_LINE)
+             	/*if (mode!=STRAIGHT_LINE)
 		{
                     locCtrl.setDrivingMode(STRAIGHT_LINE);
                     std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
                     sendCommands();
 		    mode=STRAIGHT_LINE;
 		}
-	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);
+	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);*/
 
 // M.A: Enabled staight line command for egrees testing
-/*
+
                 if (mode!=ACKERMAN)
 		{
 		    locCtrl.setDrivingMode(ACKERMAN);
@@ -178,7 +178,7 @@ void Task::updateHook()
                 double CoR[]={0,motion_command.translation/motion_command.rotation};
                 locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
                 sendSteeringCommands();
-*/
+
             }
             else if (motion_command.translation==0) 					//! point turn command
             {
@@ -217,7 +217,7 @@ void Task::updateHook()
     {
         if(targetReached())
 	{
-            std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
+            //std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
 	    state=EXEC_COMMAND;
 	}
     }
@@ -227,7 +227,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             sendCommands();
-            std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
+            //std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
 	    state=NO_COMMAND;	
         }
         else 

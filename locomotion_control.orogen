@@ -53,7 +53,8 @@ task_context "Task" do
 
    # If you want that component's updateHook() to be executed when the "input"
    # port gets data, uncomment this
-   port_driven "motion_command", "joints_readings"
+   # port_driven "motion_command", "joints_readings"
+   port_driven
 end
 
 
