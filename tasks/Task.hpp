@@ -9,11 +9,11 @@
 
 namespace locomotion_control {
 
-    /*! \class Task 
+    /*! \class Task
      * \brief The task context provides and requires services. It uses an ExecutionEngine to perform its functions.
      * Essential interfaces are operations, data flow ports and properties. These interfaces have been defined using the oroGen specification.
      * In order to modify the interfaces you should (re)use oroGen and rely on the associated workflow.
-     * 
+     *
      * \details
      * The name of a TaskContext is primarily defined via:
      \verbatim
@@ -21,22 +21,21 @@ namespace locomotion_control {
          task('custom_task_name','locomotion_control::Task')
      end
      \endverbatim
-     *  It can be dynamically adapted when the deployment is called with a prefix argument. 
+     *  It can be dynamically adapted when the deployment is called with a prefix argument.
      */
     enum CommandingState {NO_COMMAND,NEW_COMMAND,PREP_COMMAND,EXEC_COMMAND};
 
     class Task : public TaskBase
     {
-	friend class TaskBase;
+    friend class TaskBase;
     protected:
-
 
         /*****************************/
         /** Configuration Variables **/
         /*****************************/
-    	double window;
-    	double position_limit;
-    	double velocity_limit;
+        double window;
+        double position_limit;
+        double velocity_limit;
 
         /** Order of CAN Nodes **/
         std::vector<std::string> canNodesNames;
@@ -44,20 +43,20 @@ namespace locomotion_control {
         /************************/
         /** Internal Variables **/
         /************************/
-    	LocomotionControl locCtrl;
-	CommandingState state;
-	PltfDrivingMode mode;
+        LocomotionControl locCtrl;
+        CommandingState state;
+        PltfDrivingMode mode;
 
         /*********************/
         /** Input Variables **/
         /*********************/
-    	base::MotionCommand2D motion_command;
+        base::commands::Motion2D motion_command;
         base::samples::Joints joints_readings;
 
         /**********************/
         /** Output Variables **/
         /**********************/
-        base::commands::Joints joints_commands;
+        base::samples::Joints joints_commands;
 
     public:
         /** TaskContext constructor for Task
@@ -66,9 +65,9 @@ namespace locomotion_control {
          */
         Task(std::string const& name = "locomotion_control::Task", TaskCore::TaskState initial_state = Stopped);
 
-        /** TaskContext constructor for Task 
-         * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices. 
-         * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task. 
+        /** TaskContext constructor for Task
+         * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices.
+         * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task.
          * \param initial_state The initial TaskState of the TaskContext. Default is Stopped state.
          */
         Task(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state = Stopped);
@@ -110,7 +109,7 @@ namespace locomotion_control {
          *
          * The error(), exception() and fatal() calls, when called in this hook,
          * allow to get into the associated RunTimeError, Exception and
-         * FatalError states. 
+         * FatalError states.
          *
          * In the first case, updateHook() is still called, and recover() allows
          * you to go back into the Running state.  In the second case, the
@@ -142,4 +141,3 @@ namespace locomotion_control {
 }
 
 #endif
-
