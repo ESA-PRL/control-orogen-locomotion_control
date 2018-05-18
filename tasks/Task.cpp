@@ -75,7 +75,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             locCtrl.setDrivingMode(WHEEL_WALKING);
-            std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
+            LOG_DEBUG_S << "entered walking mode";
             sendCommands();
             mode=WHEEL_WALKING;
             deploy_mode=BEMA;
@@ -90,7 +90,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             locCtrl.setDrivingMode(WHEEL_WALKING);
-            std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
+            LOG_DEBUG_S << "entered walking mode";
             sendCommands();
             mode=WHEEL_WALKING;
             deploy_mode=FRONT;
@@ -105,7 +105,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             locCtrl.setDrivingMode(WHEEL_WALKING);
-            std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
+            LOG_DEBUG_S << "entered walking mode";
             sendCommands();
             mode=WHEEL_WALKING;
             deploy_mode=REAR;
@@ -134,7 +134,7 @@ void Task::updateHook()
     {
         if (motion_command.rotation==0 && motion_command.translation==0)    //! stop command
         {
-            std::cout<<"locomotion_control::Task:: stopped rover"<<std::endl;
+            LOG_DEBUG_S << "stopped rover";
             locCtrl.setDrivingMode(STOPPED_WHEELS);
             sendCommands();
             mode=STOPPED_WHEELS;
@@ -159,7 +159,7 @@ void Task::updateHook()
                 if (mode!=ACKERMAN)
                 {
                     locCtrl.setDrivingMode(ACKERMAN);
-                    std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                    LOG_DEBUG_S << "entered ackerman mode";
                     sendCommands();
                     mode=ACKERMAN;
                 }
@@ -178,7 +178,7 @@ void Task::updateHook()
                 if (mode!=SPOT_TURN)
                 {
                     locCtrl.setDrivingMode(SPOT_TURN);
-                    std::cout<<"locomotion_control::Task:: entered spot turn mode" <<std::endl;
+                    LOG_DEBUG_S << "entered spot turn mode";
                     sendCommands();
                     mode=SPOT_TURN;
                 }
@@ -190,7 +190,7 @@ void Task::updateHook()
                 if (mode!=ACKERMAN)
                 {
                     locCtrl.setDrivingMode(ACKERMAN);
-                    std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                    LOG_DEBUG_S << "entered ackerman mode";
                     sendCommands();
                     mode=ACKERMAN;
                 }
@@ -210,7 +210,7 @@ void Task::updateHook()
     {
         if(targetReached())
         {
-            //std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
+            //LOG_DEBUG_S << "target reached";
             state=EXEC_COMMAND;
         }
     }
@@ -220,7 +220,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             sendCommands();
-            //std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
+            //LOG_DEBUG_S << "sent command";
             state=NO_COMMAND;
         }
         else
