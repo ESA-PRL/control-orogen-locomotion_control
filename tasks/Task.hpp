@@ -9,9 +9,13 @@
 #include <base/samples/Joints.hpp>
 #include <base/commands/Joints.hpp>
 #include <base/commands/Motion2D.hpp>
+#include <base-logging/Logging.hpp>
 
 /** STD **/
 #include <vector>
+
+#define BASE_LOG_NAMESPACE locomotion_control
+#define BASE_LOG_DEBUG
 
 namespace locomotion_control {
 
