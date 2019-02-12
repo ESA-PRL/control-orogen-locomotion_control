@@ -14,9 +14,6 @@
 /** STD **/
 #include <vector>
 
-#define BASE_LOG_NAMESPACE locomotion_control
-#define BASE_LOG_DEBUG
-
 namespace locomotion_control {
 
     /*! \class Task

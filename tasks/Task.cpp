@@ -159,7 +159,7 @@ void Task::updateHook()
                 if (mode!=ACKERMAN)
                 {
                     locCtrl.setDrivingMode(ACKERMAN);
-                    LOG_DEBUG_S << "entered ackerman mode";
+                    LOG_DEBUG_S << "entered ackermann mode";
                     sendCommands();
                     mode=ACKERMAN;
                 }
