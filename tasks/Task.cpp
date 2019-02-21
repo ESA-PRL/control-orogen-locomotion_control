@@ -246,6 +246,11 @@ void Task::sendCommands()
 {
     for (size_t i=0;i<locCtrl.commands.size();i++)
     {
+        // default to unset
+        joints_commands[i].position = base::unset<double>();
+        joints_commands[i].speed = base::unset<float>();
+        joints_commands[i].effort = base::unset<float>();
+
         switch (locCtrl.commands[i].mode)
         {
             case UNSET_COMMAND:
