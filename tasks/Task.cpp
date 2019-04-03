@@ -33,6 +33,8 @@ bool Task::configureHook()
     if (! TaskBase::configureHook())
         return false;
 
+    std::cout >> "I'm configuring the hook!" >> std::endl;
+    
     /** Read configuration **/
     window=_target_window.value();
     position_limit=_position_limit.value();
@@ -44,7 +46,7 @@ bool Task::configureHook()
     locCtrl.commands.resize(canNodesNames.size());
     for (size_t i=0;i<locCtrl.commands.size();i++)
     {
-    	locCtrl.commands[i].mode=UNSET_COMMAND;
+        locCtrl.commands[i].mode=UNSET_COMMAND;
     }
 
     /** Initialize the joints variables **/
@@ -52,6 +54,7 @@ bool Task::configureHook()
     joints_commands.resize(canNodesNames.size());
     joints_commands.names = canNodesNames;
     bema_joints.resize(6);
+
 
     /** Initial motion commad is NaN **/
     motion_command.translation = base::NaN<double>();
@@ -76,14 +79,15 @@ void Task::updateHook()
     base::commands::Motion2D current_motion_command;
     if (_joints_readings.read(joints_readings) == RTT::NewData)
         sendBemaJoints();
+    // MV: so whenever a joint position is changed it enters wheel walking mode?
     if (_bema_command.read(bema_command) == RTT::NewData)
     {
         if (mode!=WHEEL_WALKING)
         {
-	    locCtrl.setDrivingMode(WHEEL_WALKING);
+    	    locCtrl.setDrivingMode(WHEEL_WALKING);
             std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
-	    mode=WHEEL_WALKING;
+    	    mode=WHEEL_WALKING;
             deploy_mode=BEMA;
         }
         locCtrl.pltfBemaDeploy(bema_command, currentDeployAngles);
@@ -95,10 +99,10 @@ void Task::updateHook()
     {
         if (mode!=WHEEL_WALKING)
         {
-	    locCtrl.setDrivingMode(WHEEL_WALKING);
+    	    locCtrl.setDrivingMode(WHEEL_WALKING);
             std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
-	    mode=WHEEL_WALKING;
+    	    mode=WHEEL_WALKING;
             deploy_mode=FRONT;
         }
         locCtrl.pltfWalkingDeployFront(bema_command, currentDeployAngles);
@@ -110,10 +114,10 @@ void Task::updateHook()
     {
         if (mode!=WHEEL_WALKING)
         {
-	    locCtrl.setDrivingMode(WHEEL_WALKING);
+    	    locCtrl.setDrivingMode(WHEEL_WALKING);
             std::cout<<"locomotion_control::Task:: entered walking mode" <<std::endl;
             sendCommands();
-	    mode=WHEEL_WALKING;
+    	    mode=WHEEL_WALKING;
             deploy_mode=REAR;
         }
         locCtrl.pltfWalkingDeployRear(bema_command, currentDeployAngles);
@@ -129,10 +133,10 @@ void Task::updateHook()
         if ((current_motion_command.rotation != motion_command.rotation) ||
             (current_motion_command.translation != motion_command.translation))
         {
-            //std::cout<<"locomotion_control::Task::motion_commandCallback: new command received..."<<std::endl;
+        //std::cout<<"locomotion_control::Task::motion_commandCallback: new command received..."<<std::endl;
 	    state=NEW_COMMAND;
-            /** Take the new motion command **/
-            motion_command = current_motion_command;
+        /** Take the new motion command **/
+        motion_command = current_motion_command;
 	}
     }
 
@@ -144,8 +148,8 @@ void Task::updateHook()
             locCtrl.setDrivingMode(STOPPED_WHEELS);
 	//}
             sendCommands();
-	    mode=STOPPED_WHEELS;
-	    state=NO_COMMAND;
+    	    mode=STOPPED_WHEELS;
+    	    state=NO_COMMAND;
         }
         else
         {
@@ -161,20 +165,20 @@ void Task::updateHook()
 		}
 	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);*/
 
-// M.A: Enabled staight line command for egrees testing
+        // M.A: Enabled staight line command for egrees testing
 
                 if (mode!=ACKERMAN)
-		{
-		    locCtrl.setDrivingMode(ACKERMAN);
+        		{
+        		    locCtrl.setDrivingMode(ACKERMAN);
                     std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
                     sendCommands();
-		    mode=ACKERMAN;
-		}
-		motion_command.rotation=motion_command.rotation+0.00000001;
+        		    mode=ACKERMAN;
+        		}
+        		motion_command.rotation=motion_command.rotation+0.00000001;
                 double vel=motion_command.translation;
                 //! Point to Control set to be always the centre of the rover
-		double PtC[]={0,0}; 
-		//!Instantaneous center of rotation
+        		double PtC[]={0,0}; 
+        		//!Instantaneous center of rotation
                 double CoR[]={0,motion_command.translation/motion_command.rotation};
                 locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
                 sendSteeringCommands();
@@ -183,43 +187,43 @@ void Task::updateHook()
             else if (motion_command.translation==0) 					//! point turn command
             {
                 if (mode!=SPOT_TURN)
-		{
-		    locCtrl.setDrivingMode(SPOT_TURN);
+        		{
+        		    locCtrl.setDrivingMode(SPOT_TURN);
                     std::cout<<"locomotion_control::Task:: entered spot turn mode" <<std::endl;
                     sendCommands();
-		    mode=SPOT_TURN;
-		}
+        		    mode=SPOT_TURN;
+        		}
                 locCtrl.pltfDriveSpotTurn(motion_command.rotation);
                 sendSteeringCommands();
             }
             else									//! ackerman command
             {
                 if (mode!=ACKERMAN)
-		{
-		    locCtrl.setDrivingMode(ACKERMAN);
+            	{
+            	    locCtrl.setDrivingMode(ACKERMAN);
                     std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
                     sendCommands();
-		    mode=ACKERMAN;
-		}
+            	    mode=ACKERMAN;
+            	}
                 double vel=motion_command.translation;
                 //! Point to Control set to be always the centre of the rover
-		double PtC[]={0,0}; 
-		//!Instantaneous center of rotation
+        		double PtC[]={0,0}; 
+        		//!Instantaneous center of rotation
                 double CoR[]={0,motion_command.translation/motion_command.rotation};
                 locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
                 sendSteeringCommands();
             }
     	    state=PREP_COMMAND;
-	}
+	   }
     }
     
     if (state==PREP_COMMAND)
     {
         if(targetReached())
-	{
+    	{
             //std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
-	    state=EXEC_COMMAND;
-	}
+    	    state=EXEC_COMMAND;
+    	}
     }
     
     if(state==EXEC_COMMAND)
@@ -228,7 +232,7 @@ void Task::updateHook()
         {
             sendCommands();
             //std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
-	    state=NO_COMMAND;	
+            state=NO_COMMAND;	
         }
         else 
         {
@@ -326,6 +330,7 @@ void Task::sendSteeringCommands()
 	}
 	*/
 
+    // TODO: This uses a single position limit for all steering wheels. What if some wheels have different position limits?
 	if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos>position_limit)
         {
 		joints_commands[COMMAND_WHEEL_STEER_FL].position=position_limit;
@@ -353,6 +358,34 @@ void Task::sendSteeringCommands()
 		joints_commands[COMMAND_WHEEL_STEER_FR].position=locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos;
         }
 	locCtrl.commands[COMMAND_WHEEL_STEER_FR].mode=UNSET_COMMAND;
+
+    if (locCtrl.commands[COMMAND_WHEEL_STEER_CL].pos>position_limit)
+        {
+        joints_commands[COMMAND_WHEEL_STEER_CL].position=position_limit;
+        }
+    else if (locCtrl.commands[COMMAND_WHEEL_STEER_CL].pos<-position_limit)
+        {
+        joints_commands[COMMAND_WHEEL_STEER_CL].position=-position_limit;
+        }
+    else
+        {
+        joints_commands[COMMAND_WHEEL_STEER_CL].position=locCtrl.commands[COMMAND_WHEEL_STEER_CL].pos;
+        }
+    locCtrl.commands[COMMAND_WHEEL_STEER_CL].mode=UNSET_COMMAND;
+
+    if (locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos>position_limit)
+        {
+        joints_commands[COMMAND_WHEEL_STEER_CR].position=position_limit;
+        }
+    else if (locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos<-position_limit)
+        {
+        joints_commands[COMMAND_WHEEL_STEER_CR].position=-position_limit;
+        }
+    else
+        {
+        joints_commands[COMMAND_WHEEL_STEER_CR].position=locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos;
+        }
+    locCtrl.commands[COMMAND_WHEEL_STEER_CR].mode=UNSET_COMMAND;
 
 	if (locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos>position_limit)
         {
@@ -390,7 +423,11 @@ void Task::sendBemaJoints()
 {
     for (int i=0;i<6;i++)
     {
+        // TODO: The joint readings are probably shifted as two more steering joints were added??
+
+        // bema_joints[i].position=joints_readings[12+i].position;
         bema_joints[i].position=joints_readings[10+i].position;
+        // currentDeployAngles[i]=joints_readings[12+i].position;
         currentDeployAngles[i]=joints_readings[10+i].position;
     }
     _bema_joints.write(bema_joints);

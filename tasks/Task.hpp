@@ -51,8 +51,8 @@ namespace locomotion_control {
         /** Internal Variables **/
         /************************/
     	LocomotionControl locCtrl;
-	CommandingState state;
-	PltfDrivingMode mode;
+        CommandingState state;
+        PltfDrivingMode mode;
         double currentDeployAngles[6];
         int deploy_mode;
 
