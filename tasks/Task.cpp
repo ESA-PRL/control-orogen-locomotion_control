@@ -32,8 +32,6 @@ bool Task::configureHook()
 {
     if (! TaskBase::configureHook())
         return false;
-
-    std::cout >> "I'm configuring the hook!" >> std::endl;
     
     /** Read configuration **/
     window=_target_window.value();
