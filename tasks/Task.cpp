@@ -140,7 +140,7 @@ void Task::updateHook()
 
     if (state==NEW_COMMAND)
     {
-        if (motion_command.rotation==0 && motion_command.translation==0) 	//! stop command
+        if (motion_command.rotation==0 && motion_command.translation==0 && motion_command.heading.getRad()==0) 	//! stop command
         {
             std::cout<<"locomotion_control::Task:: stopped rover"<<std::endl;
             locCtrl.setDrivingMode(STOPPED_WHEELS);
@@ -151,76 +151,93 @@ void Task::updateHook()
         }
         else
         {
-            if (motion_command.rotation==0)						//! straight line command
-// E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
+            // Activate Generic Crabbing Mode in a really ugly way
+            if (motion_command.translation == 42 && motion_command.rotation == 42)
             {
-             	/*if (mode!=STRAIGHT_LINE)
-		{
-                    locCtrl.setDrivingMode(STRAIGHT_LINE);
-                    std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
-                    sendCommands();
-		    mode=STRAIGHT_LINE;
-		}
-	        locCtrl.pltfDriveStraightVelocity(motion_command.translation);*/
+                if (mode!=GENERIC_CRAB)
+                    {
+                        locCtrl.setDrivingMode(GENERIC_CRAB);
+                        std::cout<<"locomotion_control::Task:: entered generic crab mode" <<std::endl;
+                        sendCommands();
+                        mode=GENERIC_CRAB;
+                    }
 
-        // M.A: Enabled staight line command for egrees testing
-
-                if (mode!=ACKERMAN)
-        		{
-        		    locCtrl.setDrivingMode(ACKERMAN);
-                    std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
-                    sendCommands();
-        		    mode=ACKERMAN;
-        		}
-        		motion_command.rotation=motion_command.rotation+0.00000001;
-                double vel=motion_command.translation;
-                //! Point to Control set to be always the centre of the rover
-        		double PtC[]={0,0}; 
-        		//!Instantaneous center of rotation
-                double CoR[]={0,motion_command.translation/motion_command.rotation};
-                locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
-                sendSteeringCommands();
 
             }
-            else if (motion_command.translation==0) 					//! point turn command
+
+            else if (motion_command.translation == -42 || motion_command.rotation == -42) {
+
+                if (motion_command.rotation==0)                     //! straight line command
+    // E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
+                {
+                    /*if (mode!=STRAIGHT_LINE)
             {
-                if (mode!=SPOT_TURN)
-        		{
-        		    locCtrl.setDrivingMode(SPOT_TURN);
-                    std::cout<<"locomotion_control::Task:: entered spot turn mode" <<std::endl;
-                    sendCommands();
-        		    mode=SPOT_TURN;
-        		}
-                locCtrl.pltfDriveSpotTurn(motion_command.rotation);
-                sendSteeringCommands();
+                        locCtrl.setDrivingMode(STRAIGHT_LINE);
+                        std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
+                        sendCommands();
+                mode=STRAIGHT_LINE;
             }
-            else									//! ackerman command
-            {
-                if (mode!=ACKERMAN)
-            	{
-            	    locCtrl.setDrivingMode(ACKERMAN);
-                    std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
-                    sendCommands();
-            	    mode=ACKERMAN;
-            	}
-                double vel=motion_command.translation;
-                //! Point to Control set to be always the centre of the rover
-        		double PtC[]={0,0}; 
-        		//!Instantaneous center of rotation
-                double CoR[]={0,motion_command.translation/motion_command.rotation};
-                locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
-                sendSteeringCommands();
+                locCtrl.pltfDriveStraightVelocity(motion_command.translation);*/
+
+            // M.A: Enabled staight line command for egrees testing
+
+                    if (mode!=ACKERMAN)
+                    {
+                        locCtrl.setDrivingMode(ACKERMAN);
+                        std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                        sendCommands();
+                        mode=ACKERMAN;
+                    }
+                    motion_command.rotation=motion_command.rotation+0.00000001;
+                    double vel=motion_command.translation;
+                    //! Point to Control set to be always the centre of the rover
+                    double PtC[]={0,0}; 
+                    //!Instantaneous center of rotation
+                    double CoR[]={0,motion_command.translation/motion_command.rotation};
+                    locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
+                    sendSteeringCommands();
+
+                }
+                else if (motion_command.translation==0)             //! point turn command
+                {
+                    if (mode!=SPOT_TURN)
+                    {
+                        locCtrl.setDrivingMode(SPOT_TURN);
+                        std::cout<<"locomotion_control::Task:: entered spot turn mode" <<std::endl;
+                        sendCommands();
+                        mode=SPOT_TURN;
+                    }
+                    locCtrl.pltfDriveSpotTurn(motion_command.rotation);
+                    sendSteeringCommands();
+                }
+                else                                    //! ackerman command
+                {
+                    if (mode!=ACKERMAN)
+                    {
+                        locCtrl.setDrivingMode(ACKERMAN);
+                        std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                        sendCommands();
+                        mode=ACKERMAN;
+                    }
+                    double vel=motion_command.translation;
+                    //! Point to Control set to be always the centre of the rover
+                    double PtC[]={0,0}; 
+                    //!Instantaneous center of rotation
+                    double CoR[]={0,motion_command.translation/motion_command.rotation};
+                    locCtrl.pltfDriveGenericAckerman(vel,CoR,PtC);
+                    sendSteeringCommands();
+                }
+                state=PREP_COMMAND;
             }
-    	    state=PREP_COMMAND;
-	   }
+       }
     }
     
     if (state==PREP_COMMAND)
     {
         if(targetReached())
-    	{
+        {
             //std::cout<<"locomotion_control::Task:: target reached"<<std::endl;
-    	    state=EXEC_COMMAND;
+            state=EXEC_COMMAND;
     	}
     }
     
