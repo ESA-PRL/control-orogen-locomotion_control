@@ -12,12 +12,14 @@ Task::Task(std::string const& name, TaskCore::TaskState initial_state)
     : TaskBase(name, initial_state)
 {
 	state=NO_COMMAND;
+    force_mode = ACKERMAN;
 }
 
 Task::Task(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state)
     : TaskBase(name, engine, initial_state)
 {
 	state=NO_COMMAND;
+    force_mode = ACKERMAN;
 }
 
 Task::~Task()
@@ -151,9 +153,49 @@ void Task::updateHook()
         }
         else
         {
-            // Activate Generic Crabbing Mode in a really ugly way
-            if (motion_command.translation == 42 && motion_command.rotation == 42)
+
+
+
+            if (motion_command.translation == 42 && motion_command.rotation == 42) {
+                force_mode = GENERIC_CRAB;
+            }
+            else if (motion_command.translation == -42 || motion_command.rotation == -42)
             {
+                force_mode = ACKERMAN;
+            }
+
+//                                                                                                                                       
+//                           ,,,,.         ,,,,...,,,,      ,,,,,,,,,,,        ,,,,             
+//                           ,,,,,,,      ,,. .  .,, ,,   ,,,  .  *,, ,,     ,,,,,,       ,,,.  
+//                 ,*        ,,,,,,,,    ,,.       ...,,  ,,        .. ,.   ,,,,,,,,     ,,,,,  
+//                ,,,,,,     ,,,,,,,,,   ,,.  .     ,.,,  ,,   ,     , ,.  ,,,,,,,,,.  ,,,,,,,. 
+//                ,,,,,,,,,,,,,,,,,,,,,  .,,         ,,   .,,         ,,   ,,,,,,,,,,,,,,,,,,,. 
+//                ,,,,,,,,,,,,,,,,,,,,,.   ,,,,,,,,,,       ,,,,,,,,,,     ,,,,,,,,,,,,,,,,,,,  
+//                 ,,,,,,,,,,,,,,,,,,,,         ,,.            .,,         ,,,,,,,,,,,,,,,,,,,  
+//                 .,,,,,,,,,,,,,,,,,,          ,,,            ,,,          ,,,,,,,,,,,,,,,,.   
+//                   ,,,,,,,,,,,,,,,,           .,,,,,,,,,,,,,,,,,           .,,,,,,,,,,,,,.    
+//                     ,,,,,,,,,,,,        .,,,,,,,,,,,,,,,,,,,,,,,,,,,*       ,,,**,,,,.       
+//                               ,,,,.   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ,,,,,,              
+//                                ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.                
+//                                    ,,,,,,,*,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,                   
+//                                   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ,,,,,,,,,                  
+//                                   ,,,,,,,,,,,,,*,,,,,,,,,,,,,,,,,,,,,,,,,,,                  
+//                                   ,,,,,,,,,,,,,,,,*, ,,,, ,.,,,,,,,,,,,,,,,.                 
+//                                   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*.              
+//                                  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  .,,,.            
+//                               ,,,, ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  ,,            
+//                              ,,,  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  *,,,,              
+//                              ,. ,,,, .,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,   ,,,             
+//                                ,,,.  ,,,, .,,,,,,,,,,,,,,,,,,,,.        ,,,.   ,,            
+//                                ,,   .,,,                                 ,,,                 
+//                                ..    ,,                                   ,,                 
+//                                      .,                                                      
+
+
+            // Activate Generic Crabbing Mode in a really ugly way
+            if (force_mode == GENERIC_CRAB)
+            {
+
                 if (mode!=GENERIC_CRAB)
                     {
                         locCtrl.setDrivingMode(GENERIC_CRAB);
@@ -162,10 +204,12 @@ void Task::updateHook()
                         mode=GENERIC_CRAB;
                     }
 
-
+                locCtrl.pltfDriveGenericCrab(motion_command.translation, motion_command.heading.getRad(), motion_command.rotation, joints_readings);
+                sendSteeringCommands();
+                state=PREP_COMMAND;
             }
 
-            else if (motion_command.translation == -42 || motion_command.rotation == -42) {
+            else if (force_mode == ACKERMAN) {
 
                 if (motion_command.rotation==0)                     //! straight line command
     // E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.  
@@ -327,8 +371,15 @@ void Task::sendCommands()
 //	joints_commands[COMMAND_WHEEL_WALK_BR].position=-0.35;
 	////////               END OF QUICK FIX                    /////////
 
-       joints_commands.time = base::Time::now();
-	_joints_commands.write(joints_commands);
+    // std::cout << "Sending Commands\n";
+
+    // for (int j = 0; j<12; j++)
+    // {
+    //     std::cout << "Sending:      " << joints_commands[j].position << "\t" << joints_commands[j].speed << std::endl;
+    // }
+
+    joints_commands.time = base::Time::now();
+    _joints_commands.write(joints_commands);
 }
 
 void Task::sendSteeringCommands()
@@ -344,6 +395,7 @@ void Task::sendSteeringCommands()
                         joints_commands[i].effort = base::unset<float>();
 	}
 	*/
+
 
     // TODO: This uses a single position limit for all steering wheels. What if some wheels have different position limits?
 	if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos>position_limit)
@@ -362,13 +414,13 @@ void Task::sendSteeringCommands()
 
 	if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos>position_limit)
         {
-		joints_commands[COMMAND_WHEEL_STEER_FR].position=position_limit;
+        joints_commands[COMMAND_WHEEL_STEER_FR].position=position_limit;
         }
-	else if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos<-position_limit)
+    else if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos<-position_limit)
         {
-		joints_commands[COMMAND_WHEEL_STEER_FR].position=-position_limit;
+        joints_commands[COMMAND_WHEEL_STEER_FR].position=-position_limit;
         }
-	else
+    else
         {
 		joints_commands[COMMAND_WHEEL_STEER_FR].position=locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos;
         }
@@ -399,6 +451,7 @@ void Task::sendSteeringCommands()
     else
         {
         joints_commands[COMMAND_WHEEL_STEER_CR].position=locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos;
+
         }
     locCtrl.commands[COMMAND_WHEEL_STEER_CR].mode=UNSET_COMMAND;
 
@@ -430,8 +483,14 @@ void Task::sendSteeringCommands()
         }
 	locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
 
-        joints_commands.time = base::Time::now();
+    // for (int j = 5; j<12; j++)
+    // {
+    //     std::cout << "Steering:     " << joints_commands[j].position << std::endl;
+    // }
+
+    joints_commands.time = base::Time::now();
 	_joints_commands.write(joints_commands);
+
 }
 
 void Task::sendBemaJoints()
@@ -451,8 +510,13 @@ void Task::sendBemaJoints()
 
 bool Task::targetReached()
 {
-	for (unsigned int i=0;i<joints_readings.size();i++)
-	{
+    for (unsigned int i=0;i<joints_readings.size();i++)
+    {
+
+        // TODO: Fix the following problem:
+        // When there are no joint_readings, they are "nan". Thus, all the following if-checks of the position and velocities are false.
+        // Therefore the program says the target has been reached even though there is NO information about the real state of the system available.
+        // std::cout << (joints_readings[i].position-joints_commands[i].position) << "\t";
             switch (joints_commands[i].getMode())
             {
             case base::JointState::UNSET:
@@ -461,7 +525,7 @@ bool Task::targetReached()
             case base::JointState::POSITION:
                     if (((joints_readings[i].position-joints_commands[i].position)>window) || ((joints_commands[i].position-joints_readings[i].position)>window))
                     {
-                            //std::cout<<"locomotion_control::Task::targetReached " << i << " : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position <<std::endl;
+                            // std::cout<<"locomotion_control::Task::targetReached " << i << " : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position <<std::endl;
                             return false;
                     }
                     break;
@@ -479,7 +543,7 @@ bool Task::targetReached()
                     break;
             }
 	}
-	//std::cout << "target reached!" << std::endl;
+	// std::cout << "target reached!" << std::endl;
 	return true;
 }
 

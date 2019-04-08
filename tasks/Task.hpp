@@ -55,6 +55,7 @@ namespace locomotion_control {
         PltfDrivingMode mode;
         double currentDeployAngles[6];
         int deploy_mode;
+        int force_mode;
 
         /*********************/
         /** Input Variables **/
