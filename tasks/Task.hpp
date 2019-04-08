@@ -12,6 +12,7 @@
 
 /** STD **/
 #include <vector>
+#include <math.h>
 
 namespace locomotion_control {
 
@@ -56,6 +57,7 @@ namespace locomotion_control {
         double currentDeployAngles[6];
         int deploy_mode;
         int force_mode;
+        double steeringPositionReadings[6];
 
         /*********************/
         /** Input Variables **/
@@ -93,6 +95,8 @@ namespace locomotion_control {
         void sendSteeringCommands();
         void sendBemaJoints();
         bool targetReached();
+
+        void getSteeringPositionReadings(base::samples::Joints joints_readings, double *steeringPositionReadings);
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the

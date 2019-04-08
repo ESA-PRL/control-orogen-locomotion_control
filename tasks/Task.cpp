@@ -146,7 +146,7 @@ void Task::updateHook()
         {
             std::cout<<"locomotion_control::Task:: stopped rover"<<std::endl;
             locCtrl.setDrivingMode(STOPPED_WHEELS);
-	//}
+
             sendCommands();
     	    mode=STOPPED_WHEELS;
     	    state=NO_COMMAND;
@@ -204,7 +204,10 @@ void Task::updateHook()
                         mode=GENERIC_CRAB;
                     }
 
-                locCtrl.pltfDriveGenericCrab(motion_command.translation, motion_command.heading.getRad(), motion_command.rotation, joints_readings);
+
+                getSteeringPositionReadings(joints_readings, steeringPositionReadings);
+
+                locCtrl.pltfDriveGenericCrab(motion_command.translation, motion_command.heading.getRad(), motion_command.rotation, steeringPositionReadings);
                 sendSteeringCommands();
                 state=PREP_COMMAND;
             }
@@ -560,3 +563,22 @@ void Task::cleanupHook()
     TaskBase::cleanupHook();
 }
 
+void Task::getSteeringPositionReadings(base::samples::Joints joints_readings, double *steeringPositionReadings)
+{
+    steeringPositionReadings[0] = joints_readings[COMMAND_WHEEL_STEER_FL].position;
+    steeringPositionReadings[1] = joints_readings[COMMAND_WHEEL_STEER_FR].position;
+    steeringPositionReadings[2] = joints_readings[COMMAND_WHEEL_STEER_CL].position;
+    steeringPositionReadings[3] = joints_readings[COMMAND_WHEEL_STEER_CR].position;
+    steeringPositionReadings[4] = joints_readings[COMMAND_WHEEL_STEER_BL].position;
+    steeringPositionReadings[5] = joints_readings[COMMAND_WHEEL_STEER_BR].position;
+
+    if (std::isnan(steeringPositionReadings[0])) {
+        steeringPositionReadings[0] = 0;
+        steeringPositionReadings[1] = 0;
+        steeringPositionReadings[2] = 0;
+        steeringPositionReadings[3] = 0;
+        steeringPositionReadings[4] = 0;
+        steeringPositionReadings[5] = 0;
+        std::cout << "WARNING: locomotion_control/Task.cpp joint_readings is empty." << std::endl;
+    }
+}
