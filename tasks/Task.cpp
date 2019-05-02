@@ -142,7 +142,19 @@ void Task::updateHook()
         }
         else
         {
-            if (motion_command.rotation==0)  //! straight line command
+            if (motion_command.heading.getRad() != 0.0)
+            {
+                //if (mode!=CRAB)
+                //{
+                    locCtrl.setDrivingMode(CRAB);
+                    LOG_DEBUG_S << "entered crab mode";
+                    sendCommands();
+                    mode=CRAB;
+                //}
+                locCtrl.pltfDriveCrab(motion_command.translation, motion_command.heading.getRad());
+                sendSteeringCommands();
+            }
+            else if (motion_command.rotation==0)  //! straight line command
                 // E.B: I changed the straigth line to do Ackerman with an almost "infinite" arc.
             {
                 /*if (mode!=STRAIGHT_LINE)
@@ -156,13 +168,13 @@ void Task::updateHook()
 
                 // M.A: Enabled staight line command for egrees testing
 
-                if (mode!=ACKERMAN)
-                {
+                //if (mode!=ACKERMAN)
+                //{
                     locCtrl.setDrivingMode(ACKERMAN);
                     LOG_DEBUG_S << "entered ackerman mode";
                     sendCommands();
                     mode=ACKERMAN;
-                }
+                //}
                 motion_command.rotation=motion_command.rotation+0.00000001;
                 double vel=motion_command.translation;
                 //! Point to Control set to be always the centre of the rover
@@ -175,25 +187,25 @@ void Task::updateHook()
             }
             else if (motion_command.translation==0)  //! point turn command
             {
-                if (mode!=SPOT_TURN)
-                {
+                //if (mode!=SPOT_TURN)
+                //{
                     locCtrl.setDrivingMode(SPOT_TURN);
                     LOG_DEBUG_S << "entered spot turn mode";
                     sendCommands();
                     mode=SPOT_TURN;
-                }
+                //}
                 locCtrl.pltfDriveSpotTurn(motion_command.rotation);
                 sendSteeringCommands();
             }
             else  //! ackerman command
             {
-                if (mode!=ACKERMAN)
-                {
+                //if (mode!=ACKERMAN)
+                //{
                     locCtrl.setDrivingMode(ACKERMAN);
                     LOG_DEBUG_S << "entered ackerman mode";
                     sendCommands();
                     mode=ACKERMAN;
-                }
+                //}
                 double vel=motion_command.translation;
                 //! Point to Control set to be always the centre of the rover
                 double PtC[]={0,0};
@@ -220,7 +232,6 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             sendCommands();
-            //LOG_DEBUG_S << "sent command";
             state=NO_COMMAND;
         }
         else
@@ -240,12 +251,25 @@ void Task::updateHook()
             sendCommands();
         }
     }
+
+    for (int i = 0; i < joints_commands.size(); i++)
+    {
+        LOG_DEBUG_S << "Joint " << i << " command: Position " << joints_commands[i].position << ", speed " << joints_commands[i].speed; 
+    }
+
+    // send commands
+    joints_commands.time = base::Time::now();
+    _joints_commands.write(joints_commands);
 }
 
 void Task::sendCommands()
 {
     for (size_t i=0;i<locCtrl.commands.size();i++)
     {
+        joints_commands[i].position = base::unset<double>();
+        joints_commands[i].speed = base::unset<float>();
+        joints_commands[i].effort = base::unset<float>();
+
         switch (locCtrl.commands[i].mode)
         {
             case UNSET_COMMAND:
@@ -270,7 +294,7 @@ void Task::sendCommands()
                 {
                     joints_commands[i].position = locCtrl.commands[i].pos;
                 }
-                locCtrl.commands[i].mode=UNSET_COMMAND;
+                //locCtrl.commands[i].mode=UNSET_COMMAND;
                 break;
             case MODE_SPEED:
                 if (locCtrl.commands[i].vel>velocity_limit)
@@ -285,9 +309,10 @@ void Task::sendCommands()
                 {
                     joints_commands[i].speed = locCtrl.commands[i].vel;
                 }
-                locCtrl.commands[i].mode=UNSET_COMMAND;
+                //locCtrl.commands[i].mode=UNSET_COMMAND;
                 break;
             default:
+                LOG_ERROR_S << "Invalid mode set";
                 break;
         }
     }
@@ -301,8 +326,6 @@ void Task::sendCommands()
     //  joints_commands[COMMAND_WHEEL_WALK_BR].position=-0.35;
     ////////               END OF QUICK FIX                    /////////
 
-    joints_commands.time = base::Time::now();
-    _joints_commands.write(joints_commands);
 }
 
 void Task::sendSteeringCommands()
@@ -331,7 +354,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_FL].position=locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_FL].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_FL].mode=UNSET_COMMAND;
 
     if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos>position_limit)
     {
@@ -345,7 +368,35 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_FR].position=locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_FR].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_FR].mode=UNSET_COMMAND;
+
+    if (locCtrl.commands[COMMAND_WHEEL_STEER_CL].pos>position_limit)
+    {
+        joints_commands[COMMAND_WHEEL_STEER_CL].position=position_limit;
+    }
+    else if (locCtrl.commands[COMMAND_WHEEL_STEER_CL].pos<-position_limit)
+    {
+        joints_commands[COMMAND_WHEEL_STEER_CL].position=-position_limit;
+    }
+    else
+    {
+        joints_commands[COMMAND_WHEEL_STEER_CL].position=locCtrl.commands[COMMAND_WHEEL_STEER_CL].pos;
+    }
+    //locCtrl.commands[COMMAND_WHEEL_STEER_CL].mode=UNSET_COMMAND;
+
+    if (locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos>position_limit)
+    {
+        joints_commands[COMMAND_WHEEL_STEER_CR].position=position_limit;
+    }
+    else if (locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos<-position_limit)
+    {
+        joints_commands[COMMAND_WHEEL_STEER_CR].position=-position_limit;
+    }
+    else
+    {
+        joints_commands[COMMAND_WHEEL_STEER_CR].position=locCtrl.commands[COMMAND_WHEEL_STEER_CR].pos;
+    }
+    //locCtrl.commands[COMMAND_WHEEL_STEER_CR].mode=UNSET_COMMAND;
 
     if (locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos>position_limit)
     {
@@ -359,7 +410,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_BL].position=locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_BL].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_BL].mode=UNSET_COMMAND;
 
     if (locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos>position_limit)
     {
@@ -373,7 +424,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_BR].position=locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
 
     joints_commands.time = base::Time::now();
     _joints_commands.write(joints_commands);
