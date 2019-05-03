@@ -14,9 +14,7 @@
 /** STD **/
 #include <vector>
 #include <math.h>
-
-#define BASE_LOG_NAMESPACE locomotion_control
-#define BASE_LOG_DEBUG
+#include <base-logging/Logging.hpp>
 
 namespace locomotion_control {
 

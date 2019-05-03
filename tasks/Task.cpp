@@ -79,7 +79,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             locCtrl.setDrivingMode(WHEEL_WALKING);
-            LOG_DEBUG_S << "entered walking mode";
+            LOG_INFO_S << "entered walking mode";
             sendCommands();
             mode=WHEEL_WALKING;
             deploy_mode=BEMA;
@@ -95,7 +95,7 @@ void Task::updateHook()
         {
 
             locCtrl.setDrivingMode(WHEEL_WALKING);
-            LOG_DEBUG_S << "entered walking mode";
+            LOG_INFO_S << "entered walking mode";
             sendCommands();
             mode=WHEEL_WALKING;
             deploy_mode=FRONT;
@@ -110,7 +110,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             locCtrl.setDrivingMode(WHEEL_WALKING);
-            LOG_DEBUG_S << "entered walking mode";
+            LOG_INFO_S << "entered walking mode";
             sendCommands();
             mode=WHEEL_WALKING;
             deploy_mode=REAR;
@@ -129,7 +129,7 @@ void Task::updateHook()
                 (current_motion_command.translation != motion_command.translation) ||
               (current_motion_command.heading.getRad() != motion_command.heading.getRad()))
         {
-            //std::cout<<"locomotion_control::Task::motion_commandCallback: new command received..."<<std::endl;
+            //LOG_DEBUG_S<<"locomotion_control::Task::motion_commandCallback: new command received...";
             state=NEW_COMMAND;
             /** Take the new motion command **/
             motion_command = current_motion_command;
@@ -141,7 +141,7 @@ void Task::updateHook()
 
         if (motion_command.rotation==0 && motion_command.translation==0 && motion_command.heading.getRad()==0) 	//! stop command
         {
-            std::cout << "stopped rover"<<std::endl;
+            LOG_INFO_S << "stopped rover";
             locCtrl.setDrivingMode(STOPPED_WHEELS);
             sendCommands();
             mode=STOPPED_WHEELS;
@@ -193,7 +193,7 @@ void Task::updateHook()
 
                 if (mode!=GENERIC_CRAB)
                 {
-                  std::cout<<"locomotion_control::Task:: entered generic crab mode" <<std::endl;
+                  LOG_INFO_S<<"entered generic crab mode";
                 }
                 locCtrl.setDrivingMode(GENERIC_CRAB);
                 sendCommands();
@@ -212,7 +212,7 @@ void Task::updateHook()
                 {
                     if (mode!=CRAB)
                     {
-                        std::cout << "locomotion_control::Task::entered crab mode" <<std::endl;
+                        LOG_INFO_S << "entered crab mode";
                     }
                     locCtrl.setDrivingMode(CRAB);
                     sendCommands();
@@ -226,7 +226,7 @@ void Task::updateHook()
                     /*if (mode!=STRAIGHT_LINE)
             {
                         locCtrl.setDrivingMode(STRAIGHT_LINE);
-                        std::cout<<"locomotion_control::Task:: entered straight line mode" <<std::endl;
+                        LOG_DEBUG_S<<"locomotion_control::Task:: entered straight line mode" ;
                         sendCommands();
                 mode=STRAIGHT_LINE;
             }
@@ -236,7 +236,8 @@ void Task::updateHook()
 
                     if (mode!=ACKERMAN)
                     {
-                        std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                        std::cout<<"entered ackerman mode";
+                        LOG_INFO_S<<"entered ackerman mode";
                     }
                         locCtrl.setDrivingMode(ACKERMAN);
                         sendCommands();
@@ -255,7 +256,7 @@ void Task::updateHook()
                 {
                     if (mode!=SPOT_TURN)
                     {
-                        std::cout<<"locomotion_control::Task:: entered spot turn mode" <<std::endl;
+                        LOG_INFO_S<<"entered spot turn mode";
                     }
                     locCtrl.setDrivingMode(SPOT_TURN);
                     sendCommands();
@@ -267,7 +268,7 @@ void Task::updateHook()
                 {
                     if (mode!=ACKERMAN)
                     {
-                      std::cout<<"locomotion_control::Task:: entered ackerman mode" <<std::endl;
+                      LOG_INFO_S<<"entered ackerman mode" ;
                     }
                     locCtrl.setDrivingMode(ACKERMAN);
                     sendCommands();
@@ -300,7 +301,7 @@ void Task::updateHook()
         if (mode!=WHEEL_WALKING)
         {
             sendCommands();
-            //std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
+            //LOG_DEBUG_S<<"locomotion_control::Task:: sent command";
             state=NO_COMMAND;
         }
         else
@@ -394,11 +395,11 @@ void Task::sendCommands()
 //	joints_commands[COMMAND_WHEEL_WALK_BR].position=-0.35;
 	////////               END OF QUICK FIX                    /////////
 
-    // std::cout << "Sending Commands\n";
+    // LOG_DEBUG_S << "Sending Commands\n";
 
     // for (int j = 0; j<12; j++)
     // {
-    //     std::cout << "Sending:      " << joints_commands[j].position << "\t" << joints_commands[j].speed << std::endl;
+    //     LOG_DEBUG_S << "Sending:      " << joints_commands[j].position << "\t" << joints_commands[j].speed << std::endl;
     // }
 }
 
@@ -526,7 +527,7 @@ bool Task::targetReached()
         // TODO: Fix the following problem:
         // When there are no joint_readings, they are "nan". Thus, all the following if-checks of the position and velocities are false.
         // Therefore the program says the target has been reached even though there is NO information about the real state of the system available.
-        // std::cout << (joints_readings[i].position-joints_commands[i].position) << "\t";
+        // LOG_DEBUG_S << (joints_readings[i].position-joints_commands[i].position) << "\t";
             switch (joints_commands[i].getMode())
             {
             case base::JointState::UNSET:
@@ -536,7 +537,7 @@ bool Task::targetReached()
 
                 if (((joints_readings[i].position-joints_commands[i].position)>window) || ((joints_commands[i].position-joints_readings[i].position)>window))
                 {
-                    //std::cout<<"locomotion_control::Task::targetReached " << i << " : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position <<std::endl;
+                    LOG_DEBUG_S<<"targetReached " << i << " : Target position is: "<< joints_commands[i].position << " and current position is: " << joints_readings[i].position ;
                     return false;
                 }
                 break;
@@ -544,7 +545,7 @@ bool Task::targetReached()
             case base::JointState::SPEED:
                 if (((joints_readings[i].speed-joints_commands[i].speed)>window) || ((joints_commands[i].speed-joints_readings[i].speed)>window))
                 {
-                    //std::cout<<"locomotion_control::Task::targetReached " << i << " : Target velocity is: "<< joints_commands[i].speed << " and current velocity is: " << joints_readings[i].speed <<std::endl;
+                    //LOG_DEBUG_S<<"locomotion_control::Task::targetReached " << i << " : Target velocity is: "<< joints_commands[i].speed << " and current velocity is: " << joints_readings[i].speed ;
                     return false;
                 }
                 break;
@@ -556,7 +557,7 @@ bool Task::targetReached()
                 break;
         }
     }
-    //std::cout << "target reached!" << std::endl;
+    //LOG_DEBUG_S << "target reached!" << std::endl;
     return true;
 }
 
@@ -589,6 +590,6 @@ void Task::getSteeringPositionReadings(base::samples::Joints joints_readings, do
         steeringPositionReadings[3] = 0;
         steeringPositionReadings[4] = 0;
         steeringPositionReadings[5] = 0;
-        std::cout << "WARNING: locomotion_control/Task.cpp joint_readings is empty." << std::endl;
+        LOG_WARN_S << "WARNING: locomotion_control/Task.cpp joint_readings is empty." << std::endl;
     }
 }
