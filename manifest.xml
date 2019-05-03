@@ -6,13 +6,6 @@
   <license>GPL v2 or later</license>
   <url>http://</url>
   <logo>http://</logo>
-  <!--
-   To add any dependencies use the depend tag
-  <depend package="dummy-dependency-0" />
-	...
-  <depend package="dummy-dependency-n-1" />
-  <depend package="dummy-dependency-n" />
-  -->
   <depend package="control/locomotion_control" />
   <depend package="base/orogen/types" />
 </package>
