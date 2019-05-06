@@ -152,11 +152,15 @@ void Task::updateHook()
 
             // Set force mode depending on the input
             if (motion_command.translation == 42 && motion_command.rotation == 42) {
+
                 force_mode = GENERIC_CRAB;
             }
             else if (motion_command.translation == -42 || motion_command.rotation == -42)
             {
                 force_mode = ACKERMAN;
+                // Limit commands to very small so there's no sudden motion.
+                if (motion_command.translation == -42) motion_command.translation = 0.0001;
+                if (motion_command.rotation == -42) motion_command.rotation = 0.0001;
             }
 
 //
@@ -195,6 +199,8 @@ void Task::updateHook()
                 {
                   LOG_INFO_S<<"entered generic crab mode";
                 }
+
+
                 locCtrl.setDrivingMode(GENERIC_CRAB);
                 sendCommands();
                 mode=GENERIC_CRAB;
@@ -214,6 +220,9 @@ void Task::updateHook()
                     {
                         LOG_INFO_S << "entered crab mode";
                     }
+
+
+
                     locCtrl.setDrivingMode(CRAB);
                     sendCommands();
                     mode=CRAB;
@@ -228,7 +237,9 @@ void Task::updateHook()
                         locCtrl.setDrivingMode(STRAIGHT_LINE);
                         LOG_DEBUG_S<<"locomotion_control::Task:: entered straight line mode" ;
                         sendCommands();
-                mode=STRAIGHT_LINE;
+                mode                // motion_command.translation = 0;
+                // motion_command.rotation = 0;
+=STRAIGHT_LINE;
             }
                 locCtrl.pltfDriveStraightVelocity(motion_command.translation);*/
 
@@ -236,12 +247,13 @@ void Task::updateHook()
 
                     if (mode!=ACKERMAN)
                     {
-                        std::cout<<"entered ackerman mode";
                         LOG_INFO_S<<"entered ackerman mode";
                     }
-                        locCtrl.setDrivingMode(ACKERMAN);
-                        sendCommands();
-                        mode=ACKERMAN;
+
+
+                    locCtrl.setDrivingMode(ACKERMAN);
+                    sendCommands();
+                    mode=ACKERMAN;
                     motion_command.rotation=motion_command.rotation+0.00000001;
                     double vel=motion_command.translation;
                     //! Point to Control set to be always the centre of the rover
@@ -258,6 +270,8 @@ void Task::updateHook()
                     {
                         LOG_INFO_S<<"entered spot turn mode";
                     }
+
+
                     locCtrl.setDrivingMode(SPOT_TURN);
                     sendCommands();
                     mode=SPOT_TURN;
@@ -270,6 +284,7 @@ void Task::updateHook()
                     {
                       LOG_INFO_S<<"entered ackerman mode" ;
                     }
+
                     locCtrl.setDrivingMode(ACKERMAN);
                     sendCommands();
                     mode=ACKERMAN;
