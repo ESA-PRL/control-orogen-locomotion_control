@@ -62,6 +62,10 @@ namespace locomotion_control {
         int force_mode;
         double steeringPositionReadings[6];
 
+        double linearVelocity;    // [m/s] of rover in respect to rover inertial frame
+        double headingAngle;      // [rad] of rover in respect to rover intertial frame
+        double angularVelocity;   // [rad/s] of rover in respect to rover inertial frame
+
         /*********************/
         /** Input Variables **/
         /*********************/

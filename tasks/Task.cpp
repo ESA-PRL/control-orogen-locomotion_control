@@ -207,7 +207,11 @@ void Task::updateHook()
 
                 getSteeringPositionReadings(joints_readings, steeringPositionReadings);
 
-                locCtrl.pltfDriveGenericCrab(motion_command.translation, motion_command.heading.getRad(), motion_command.rotation, steeringPositionReadings);
+                linearVelocity = motion_command.translation;
+                headingAngle = motion_command.heading.getRad();
+                angularVelocity = motion_command.rotation;
+
+                locCtrl.pltfDriveGenericCrab(linearVelocity, headingAngle, angularVelocity, steeringPositionReadings);
                 sendSteeringCommands();
                 state=PREP_COMMAND;
             }
