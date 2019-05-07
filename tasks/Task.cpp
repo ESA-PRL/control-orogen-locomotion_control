@@ -198,12 +198,12 @@ void Task::updateHook()
                 if (mode!=GENERIC_CRAB)
                 {
                   LOG_INFO_S<<"entered generic crab mode";
-                }
-
-
                 locCtrl.setDrivingMode(GENERIC_CRAB);
                 sendCommands();
                 mode=GENERIC_CRAB;
+                }
+
+
 
                 getSteeringPositionReadings(joints_readings, steeringPositionReadings);
 
@@ -223,13 +223,13 @@ void Task::updateHook()
                     if (mode!=CRAB)
                     {
                         LOG_INFO_S << "entered crab mode";
+                    locCtrl.setDrivingMode(CRAB);
+                    sendCommands();
+                    mode=CRAB;
                     }
 
 
 
-                    locCtrl.setDrivingMode(CRAB);
-                    sendCommands();
-                    mode=CRAB;
                     locCtrl.pltfDriveCrab(motion_command.translation, motion_command.heading.getRad());
                     sendSteeringCommands();
                 }
@@ -252,12 +252,12 @@ void Task::updateHook()
                     if (mode!=ACKERMAN)
                     {
                         LOG_INFO_S<<"entered ackerman mode";
+                        locCtrl.setDrivingMode(ACKERMAN);
+                        sendCommands();
+                        mode=ACKERMAN;
                     }
 
 
-                    locCtrl.setDrivingMode(ACKERMAN);
-                    sendCommands();
-                    mode=ACKERMAN;
                     motion_command.rotation=motion_command.rotation+0.00000001;
                     double vel=motion_command.translation;
                     //! Point to Control set to be always the centre of the rover
@@ -273,12 +273,11 @@ void Task::updateHook()
                     if (mode!=SPOT_TURN)
                     {
                         LOG_INFO_S<<"entered spot turn mode";
+                        locCtrl.setDrivingMode(SPOT_TURN);
+                        sendCommands();
+                        mode=SPOT_TURN;
                     }
 
-
-                    locCtrl.setDrivingMode(SPOT_TURN);
-                    sendCommands();
-                    mode=SPOT_TURN;
                     locCtrl.pltfDriveSpotTurn(motion_command.rotation);
                     sendSteeringCommands();
                 }
@@ -287,11 +286,11 @@ void Task::updateHook()
                     if (mode!=ACKERMAN)
                     {
                       LOG_INFO_S<<"entered ackerman mode" ;
-                    }
-
                     locCtrl.setDrivingMode(ACKERMAN);
                     sendCommands();
                     mode=ACKERMAN;
+                    }
+
                     double vel=motion_command.translation;
                     //! Point to Control set to be always the centre of the rover
                     double PtC[]={0,0};
