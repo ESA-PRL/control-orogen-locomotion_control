@@ -175,12 +175,19 @@ void Task::updateHook()
         //std::cout<<"locomotion_control::Task:: sent command"<<std::endl;
         state=NO_COMMAND;
     }
+
+    joints_commands.time = base::Time::now();
+    _joints_commands.write(joints_commands);
 }
 
 void Task::sendCommands()
 {
     for (size_t i=0;i<locCtrl.commands.size();i++)
     {
+        joints_commands[i].position = base::unset<double>();
+        joints_commands[i].speed = base::unset<float>();
+        joints_commands[i].effort = base::unset<float>();
+
         switch (locCtrl.commands[i].mode)
         {
             case UNSET_COMMAND:
@@ -226,34 +233,10 @@ void Task::sendCommands()
                 break;
         }
     }
-
-    ///  QUICK FIX TO COMMAND WHEEL WALKING MOTORS TO FIXED POSITION ///
-    //  joints_commands[COMMAND_WHEEL_WALK_FL].position=-0.68; // 20 deg in rad
-    //  joints_commands[COMMAND_WHEEL_WALK_FR].position=-0.68;
-    //  joints_commands[COMMAND_WHEEL_WALK_CL].position=-0.35;
-    //  joints_commands[COMMAND_WHEEL_WALK_CR].position=-0.35;
-    //  joints_commands[COMMAND_WHEEL_WALK_BL].position=-0.35;
-    //  joints_commands[COMMAND_WHEEL_WALK_BR].position=-0.35;
-    ////////               END OF QUICK FIX                    /////////
-
-    joints_commands.time = base::Time::now();
-    _joints_commands.write(joints_commands);
 }
 
 void Task::sendSteeringCommands()
 {
-    /*
-       for (size_t i=0;i<locCtrl.commands.size();i++)
-       {
-       if (joints_commands[i].hasPosition())
-       joints_commands[i].position = base::unset<double>();
-       if (joints_commands[i].hasSpeed())
-       joints_commands[i].speed = base::unset<float>();
-       if (joints_commands[i].hasEffort())
-       joints_commands[i].effort = base::unset<float>();
-       }
-       */
-
     if (locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos>position_limit)
     {
         joints_commands[COMMAND_WHEEL_STEER_FL].position=position_limit;
@@ -266,7 +249,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_FL].position=locCtrl.commands[COMMAND_WHEEL_STEER_FL].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_FL].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_FL].mode=UNSET_COMMAND;
 
     if (locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos>position_limit)
     {
@@ -280,7 +263,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_FR].position=locCtrl.commands[COMMAND_WHEEL_STEER_FR].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_FR].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_FR].mode=UNSET_COMMAND;
 
     if (locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos>position_limit)
     {
@@ -294,7 +277,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_BL].position=locCtrl.commands[COMMAND_WHEEL_STEER_BL].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_BL].mode=UNSET_COMMAND;
+    //locCtrl.commands[COMMAND_WHEEL_STEER_BL].mode=UNSET_COMMAND;
 
     if (locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos>position_limit)
     {
@@ -308,10 +291,7 @@ void Task::sendSteeringCommands()
     {
         joints_commands[COMMAND_WHEEL_STEER_BR].position=locCtrl.commands[COMMAND_WHEEL_STEER_BR].pos;
     }
-    locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
-
-    joints_commands.time = base::Time::now();
-    _joints_commands.write(joints_commands);
+    //locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
 }
 
 bool Task::targetReached()
