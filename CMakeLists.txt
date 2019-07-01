@@ -8,10 +8,8 @@ endif()
 
 add_definitions(-Wall)
 add_definitions(-DBASE_LOG_NAMESPACE=${PROJECT_NAME})
-add_definitions(-DBASE_LOG_DEBUG)
+add_definitions(-DBASE_LOG_INFO)
 
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/.orogen/config")
 INCLUDE(locomotion_controlBase)
 
-# FIND_PACKAGE(KDL)
-# FIND_PACKAGE(OCL)
