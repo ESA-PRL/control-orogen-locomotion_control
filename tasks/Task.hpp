@@ -5,7 +5,7 @@
 
 #include "locomotion_control/TaskBase.hpp"
 #include "locomotion_control/LocomotionControl.h"
-#include "platform_driver/platform_driverTypes.hpp"
+#include "platform_driver_pcan/platform_driver_pcanTypes.hpp"
 
 namespace locomotion_control {
 
