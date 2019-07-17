@@ -10,14 +10,12 @@ Task::Task(std::string const& name, TaskCore::TaskState initial_state)
     : TaskBase(name, initial_state)
 {
     state = NO_COMMAND;
-    force_mode = ACKERMAN;
 }
 
 Task::Task(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state)
     : TaskBase(name, engine, initial_state)
 {
     state = NO_COMMAND;
-    force_mode = ACKERMAN;
 }
 
 Task::~Task() {}
@@ -146,145 +144,25 @@ void Task::updateHook()
         }
         else
         {
-
-            // Set force mode depending on the input
-            if (motion_command.translation == 42 && motion_command.rotation == 42)
+            if (mode != GENERIC_CRAB)
             {
-
-                force_mode = GENERIC_CRAB;
-            }
-            else if (motion_command.translation == -42 || motion_command.rotation == -42)
-            {
-                force_mode = ACKERMAN;
-                // Limit commands to very small so there's no sudden motion.
-                if (motion_command.translation == -42) motion_command.translation = 0.0001;
-                if (motion_command.rotation == -42) motion_command.rotation = 0.0001;
+                LOG_INFO_S << "entered generic crab mode";
+                locCtrl.setDrivingMode(GENERIC_CRAB);
+                sendCommands();
+                mode = GENERIC_CRAB;
             }
 
-            //
-            //                           ,,,,.         ,,,,...,,,,      ,,,,,,,,,,,        ,,,,
-            //                           ,,,,,,,      ,,. .  .,, ,,   ,,,  .  *,, ,,     ,,,,,, ,,,.
-            //                 ,*        ,,,,,,,,    ,,.       ...,,  ,,        .. ,.   ,,,,,,,,
-            //                 ,,,,,
-            //                ,,,,,,     ,,,,,,,,,   ,,.  .     ,.,,  ,,   ,     , ,.  ,,,,,,,,,.
-            //                ,,,,,,,.
-            //                ,,,,,,,,,,,,,,,,,,,,,  .,,         ,,   .,,         ,,
-            //                ,,,,,,,,,,,,,,,,,,,.
-            //                ,,,,,,,,,,,,,,,,,,,,,.   ,,,,,,,,,,       ,,,,,,,,,,
-            //                ,,,,,,,,,,,,,,,,,,,
-            //                 ,,,,,,,,,,,,,,,,,,,,         ,,.            .,, ,,,,,,,,,,,,,,,,,,,
-            //                 .,,,,,,,,,,,,,,,,,,          ,,,            ,,, ,,,,,,,,,,,,,,,,.
-            //                   ,,,,,,,,,,,,,,,,           .,,,,,,,,,,,,,,,,, .,,,,,,,,,,,,,.
-            //                     ,,,,,,,,,,,,        .,,,,,,,,,,,,,,,,,,,,,,,,,,,* ,,,**,,,,.
-            //                               ,,,,.   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ,,,,,,
-            //                                ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.
-            //                                    ,,,,,,,*,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-            //                                   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ,,,,,,,,,
-            //                                   ,,,,,,,,,,,,,*,,,,,,,,,,,,,,,,,,,,,,,,,,,
-            //                                   ,,,,,,,,,,,,,,,,*, ,,,, ,.,,,,,,,,,,,,,,,.
-            //                                   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*.
-            //                                  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  .,,,.
-            //                               ,,,, ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  ,,
-            //                              ,,,  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  *,,,,
-            //                              ,. ,,,, .,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,   ,,,
-            //                                ,,,.  ,,,, .,,,,,,,,,,,,,,,,,,,,.        ,,,.   ,,
-            //                                ,,   .,,,                                 ,,,
-            //                                ..    ,,                                   ,,
-            //                                      .,
+            getSteeringPositionReadings(joints_readings, steeringPositionReadings);
 
-            // Activate Generic Crabbing Mode in a really ugly way
-            if (force_mode == GENERIC_CRAB)
-            {
+            linearVelocity = motion_command.translation;
+            headingAngle = motion_command.heading.getRad();
+            angularVelocity = motion_command.rotation;
 
-                if (mode != GENERIC_CRAB)
-                {
-                    LOG_INFO_S << "entered generic crab mode";
-                    locCtrl.setDrivingMode(GENERIC_CRAB);
-                    sendCommands();
-                    mode = GENERIC_CRAB;
-                }
+            locCtrl.pltfDriveGenericCrab(
+                linearVelocity, headingAngle, angularVelocity, steeringPositionReadings);
+            sendSteeringCommands();
+            state = PREP_COMMAND;
 
-                getSteeringPositionReadings(joints_readings, steeringPositionReadings);
-
-                linearVelocity = motion_command.translation;
-                headingAngle = motion_command.heading.getRad();
-                angularVelocity = motion_command.rotation;
-
-                locCtrl.pltfDriveGenericCrab(
-                    linearVelocity, headingAngle, angularVelocity, steeringPositionReadings);
-                sendSteeringCommands();
-                state = PREP_COMMAND;
-            }
-
-            else if (force_mode == ACKERMAN)
-            {
-
-                if (motion_command.heading.getRad() != 0.0)
-                {
-                    if (mode != CRAB)
-                    {
-                        LOG_INFO_S << "entered crab mode";
-                        locCtrl.setDrivingMode(CRAB);
-                        sendCommands();
-                        mode = CRAB;
-                    }
-
-                    locCtrl.pltfDriveCrab(motion_command.translation,
-                                          motion_command.heading.getRad());
-                    sendSteeringCommands();
-                }
-                else if (motion_command.rotation == 0)  //! straight line command
-                {
-                    if (mode != ACKERMAN)
-                    {
-                        LOG_INFO_S << "entered ackerman mode";
-                        locCtrl.setDrivingMode(ACKERMAN);
-                        sendCommands();
-                        mode = ACKERMAN;
-                    }
-
-                    motion_command.rotation = motion_command.rotation + 0.00000001;
-                    double vel = motion_command.translation;
-                    //! Point to Control set to be always the centre of the rover
-                    double PtC[] = {0, 0};
-                    //! Instantaneous center of rotation
-                    double CoR[] = {0, motion_command.translation / motion_command.rotation};
-                    locCtrl.pltfDriveGenericAckerman(vel, CoR, PtC);
-                    sendSteeringCommands();
-                }
-                else if (motion_command.translation == 0)  //! point turn command
-                {
-                    if (mode != SPOT_TURN)
-                    {
-                        LOG_INFO_S << "entered spot turn mode";
-                        locCtrl.setDrivingMode(SPOT_TURN);
-                        sendCommands();
-                        mode = SPOT_TURN;
-                    }
-
-                    locCtrl.pltfDriveSpotTurn(motion_command.rotation);
-                    sendSteeringCommands();
-                }
-                else  //! ackerman command
-                {
-                    if (mode != ACKERMAN)
-                    {
-                        LOG_INFO_S << "entered ackerman mode";
-                        locCtrl.setDrivingMode(ACKERMAN);
-                        sendCommands();
-                        mode = ACKERMAN;
-                    }
-
-                    double vel = motion_command.translation;
-                    //! Point to Control set to be always the centre of the rover
-                    double PtC[] = {0, 0};
-                    //! Instantaneous center of rotation
-                    double CoR[] = {0, motion_command.translation / motion_command.rotation};
-                    locCtrl.pltfDriveGenericAckerman(vel, CoR, PtC);
-                    sendSteeringCommands();
-                }
-                state = PREP_COMMAND;
-            }
         }
     }
 
@@ -522,10 +400,10 @@ void Task::sendBemaJoints()
     {
         // TODO: The joint readings are probably shifted as two more steering joints were added??
 
-        // bema_joints[i].position=joints_readings[12+i].position;
-        bema_joints[i].position = joints_readings[10 + i].position;
-        // currentDeployAngles[i]=joints_readings[12+i].position;
-        currentDeployAngles[i] = joints_readings[10 + i].position;
+        bema_joints[i].position = joints_readings[COMMAND_WHEEL_WALK_FL+i].position;
+        // bema_joints[i].position = joints_readings[10 + i].position;
+        currentDeployAngles[i] = joints_readings[COMMAND_WHEEL_WALK_FL+i].position;
+        // currentDeployAngles[i] = joints_readings[10 + i].position;
     }
     _bema_joints.write(bema_joints);
 }

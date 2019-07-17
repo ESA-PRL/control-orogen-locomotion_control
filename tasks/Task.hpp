@@ -39,7 +39,6 @@ class Task : public TaskBase
     PltfDrivingMode mode;
     double currentDeployAngles[6];
     int deploy_mode;
-    int force_mode;
     double steeringPositionReadings[6];
 
     double linearVelocity;   // [m/s] of rover in respect to rover inertial frame
