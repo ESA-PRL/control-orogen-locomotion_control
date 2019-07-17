@@ -144,12 +144,12 @@ void Task::updateHook()
         }
         else
         {
-            if (mode != GENERIC_CRAB)
+            if (mode != INVERSE_KINEMATICS_2D)
             {
-                LOG_INFO_S << "entered generic crab mode";
-                locCtrl.setDrivingMode(GENERIC_CRAB);
+                LOG_INFO_S << "entered 2D inverse kinematics mode";
+                locCtrl.setDrivingMode(INVERSE_KINEMATICS_2D);
                 sendCommands();
-                mode = GENERIC_CRAB;
+                mode = INVERSE_KINEMATICS_2D;
             }
 
             getSteeringPositionReadings(joints_readings, steeringPositionReadings);
@@ -158,7 +158,7 @@ void Task::updateHook()
             headingAngle = motion_command.heading.getRad();
             angularVelocity = motion_command.rotation;
 
-            locCtrl.pltfDriveGenericCrab(
+            locCtrl.pltfDriveInverseKinematics2D(
                 linearVelocity, headingAngle, angularVelocity, steeringPositionReadings, position_limit);
             sendSteeringCommands();
             state = PREP_COMMAND;
