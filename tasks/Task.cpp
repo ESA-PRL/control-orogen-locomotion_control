@@ -159,7 +159,7 @@ void Task::updateHook()
             angularVelocity = motion_command.rotation;
 
             locCtrl.pltfDriveGenericCrab(
-                linearVelocity, headingAngle, angularVelocity, steeringPositionReadings);
+                linearVelocity, headingAngle, angularVelocity, steeringPositionReadings, position_limit);
             sendSteeringCommands();
             state = PREP_COMMAND;
 
