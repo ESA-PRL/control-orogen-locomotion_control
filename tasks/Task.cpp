@@ -132,7 +132,6 @@ void Task::updateHook()
 
     if (state == NEW_COMMAND)
     {
-
         if (motion_command.rotation == 0 && motion_command.translation == 0
             && motion_command.heading.getRad() == 0)  //! stop command
         {
@@ -158,8 +157,10 @@ void Task::updateHook()
             headingAngle = motion_command.heading.getRad();
             angularVelocity = motion_command.rotation;
 
+            // Compute joint angles, save them to the commands vector in the locCtrl object and set the joint modes to pos or vel.
             locCtrl.pltfDriveInverseKinematics2D(
                 linearVelocity, headingAngle, angularVelocity, steeringPositionReadings, position_limit);
+            // Save steering commands from locCtrl object "commands" to orogen object "joints_commands"
             sendSteeringCommands();
             state = PREP_COMMAND;
 
@@ -172,6 +173,10 @@ void Task::updateHook()
         {
             // LOG_DEBUG_S << "target reached";
             state = EXEC_COMMAND;
+        }
+        else {
+            // Velocities in "joints_commands" have to be set to zero so the driving stops if the steering wheels are misaligned more than allowed in the window.
+            sendZeroVelocities();
         }
     }
 
@@ -201,11 +206,11 @@ void Task::updateHook()
         }
     }
 
-    for (int i = 0; i < joints_commands.size(); i++)
-    {
-        LOG_DEBUG_S << "Joint " << i << " command: Position " << joints_commands[i].position
-                    << ", speed " << joints_commands[i].speed;
-    }
+    // for (int i = 0; i < joints_commands.size(); i++)
+    // {
+    //     LOG_DEBUG_S << "Joint " << i << " command: Position " << joints_commands[i].position
+    //                 << ", speed " << joints_commands[i].speed;
+    // }
 
     // send commands
     joints_commands.time = base::Time::now();
@@ -394,6 +399,17 @@ void Task::sendSteeringCommands()
     // locCtrl.commands[COMMAND_WHEEL_STEER_BR].mode=UNSET_COMMAND;
 }
 
+// Set Velocities of driving wheels to 0
+void Task::sendZeroVelocities()
+{
+    for (size_t i = COMMAND_WHEEL_DRIVE_FL; i < COMMAND_WHEEL_DRIVE_FL + 6; i++)
+    {
+        joints_commands[i].speed = 0;
+        // locCtrl.commands[i].mode = UNSET_COMMAND;
+    }
+    LOG_DEBUG_S << "Velocities set to 0";
+}
+
 void Task::sendBemaJoints()
 {
     for (int i = 0; i < 6; i++)
@@ -410,6 +426,7 @@ void Task::sendBemaJoints()
 
 bool Task::targetReached()
 {
+    LOG_DEBUG_S << "in target reached";
     for (unsigned int i = 0; i < joints_readings.size(); i++)
     {
 
@@ -425,24 +442,22 @@ bool Task::targetReached()
                 //! Means no command was send for this motor. Don't need to check target.
                 break;
             case base::JointState::POSITION:
-
-                if (((joints_readings[i].position - joints_commands[i].position) > window)
-                    || ((joints_commands[i].position - joints_readings[i].position) > window))
+                LOG_DEBUG_S << "TARGET NOT REACHED! Joint: " << i
+                            << " : Target position is: " << joints_commands[i].position
+                            << " and current position is: " << joints_readings[i].position;
+                if (abs(joints_readings[i].position - joints_commands[i].position) > window)
                 {
-                    LOG_DEBUG_S << "targetReached " << i
-                                << " : Target position is: " << joints_commands[i].position
-                                << " and current position is: " << joints_readings[i].position;
                     return false;
+                }
+                else{
+                    LOG_DEBUG_S << "TARGET REACHED!";
                 }
                 break;
 
             case base::JointState::SPEED:
-                if (((joints_readings[i].speed - joints_commands[i].speed) > window)
-                    || ((joints_commands[i].speed - joints_readings[i].speed) > window))
+                if (abs(joints_readings[i].speed - joints_commands[i].speed) > window)
                 {
-                    // LOG_DEBUG_S<<"locomotion_control::Task::targetReached " << i << " : Target
-                    // velocity is: "<< joints_commands[i].speed << " and current velocity is: " <<
-                    // joints_readings[i].speed ;
+                    // LOG_DEBUG_S<<"locomotion_control::Task::targetReached " << i << " : Target velocity is: "<< joints_commands[i].speed << " and current velocity is: " << joints_readings[i].speed;
                     return false;
                 }
                 break;

@@ -64,6 +64,7 @@ class Task : public TaskBase
     ~Task();
     void sendCommands();
     void sendSteeringCommands();
+    void sendZeroVelocities();
     void sendBemaJoints();
     bool targetReached();
     void getSteeringPositionReadings(base::samples::Joints joints_readings,
